@@ -707,7 +707,7 @@ end = struct
       | Ppat_construct (c, args) ->
         let process_args () =
           Option.iter args ~f:(fun (tvs, pat) ->
-            List.iter tvs ~f:(fun (tv : _ Asttypes.loc) ->
+            List.iter tvs ~f:(fun ((tv : _ Asttypes.loc), _) ->
               add_token
                 tv.loc
                 (Token_type.of_builtin TypeParameter)
