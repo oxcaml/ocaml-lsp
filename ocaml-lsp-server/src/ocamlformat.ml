@@ -137,7 +137,7 @@ let formatter doc =
 ;;
 
 let exec cancel bin args stdin =
-  let refmt = Fpath.to_string bin in
+  let refmt = Stdune.Path.to_string bin in
   let+ res, cancel = run_command cancel refmt stdin args in
   match cancel with
   | Cancelled () ->
