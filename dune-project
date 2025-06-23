@@ -72,7 +72,7 @@ possible and does not make any assumptions about IO.
   (ocamlformat-rpc-lib (>= 0.21.0))
   (odoc :with-doc)
   (odoc-parser (= 2.0.0))
-  (merlin-lib (= "5.2.1-502+jst"))
+  (merlin-lib (= "5.2.1-502+ox"))
   ppx_yojson_conv
   core_unix
   async
