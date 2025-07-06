@@ -26,7 +26,7 @@ module SyntaxDocumentation = struct
 end
 
 module MerlinDiagnostics = struct
-  type t = { enable : bool [@default false] }
+  type t = { enable : bool [@default true] }
   [@@deriving yojson] [@@yojson.allow_extra_fields]
 end
 
@@ -68,7 +68,7 @@ let default =
         ; hint_let_syntax_ppx = false
         }
   ; syntax_documentation = Some { enable = false }
-  ; merlin_diagnostics = Some { enable = false }
+  ; merlin_diagnostics = Some { enable = true }
   ; shorten_merlin_diagnostics = Some { enable = false }
   ; ppx_css_colors = Some { enable = true }
   }
