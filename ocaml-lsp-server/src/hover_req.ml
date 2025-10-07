@@ -209,17 +209,21 @@ let format_type_enclosing
   ~typ
   ~doc
   ~stack_or_heap
-  ~(syntax_doc : Query_protocol.syntax_doc_result option)
+  ~(syntax_doc : Query_protocol.Syntax_doc_result.t option)
   =
   (* TODO for vscode, we should just use the language id. But that will not work
      for all editors *)
   let syntax_doc =
     Option.map syntax_doc ~f:(fun syntax_doc ->
+      let manual_sentence =
+        Option.value_map syntax_doc.documentation ~default:""
+        ~f:(fun doc_link -> sprintf " See [Manual](%s)" doc_link)
+      in
       sprintf
-        "`syntax` %s: %s. See [Manual](%s)"
+        "`syntax` %s: %s.%s"
         syntax_doc.name
         syntax_doc.description
-        syntax_doc.documentation)
+        manual_sentence)
   in
   let stack_or_heap = Option.map ~f:(( ^ ) "Allocation: ") stack_or_heap in
   `MarkupContent

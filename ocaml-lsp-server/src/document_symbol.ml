@@ -261,7 +261,7 @@ let symbols_from_parsetree parsetree =
   in
   let expr (iterator : Ast_iterator.iterator) (item : Parsetree.expression) =
     match item.pexp_desc with
-    | Pexp_let (_, bindings, inner) ->
+    | Pexp_let (_, _, bindings, inner) ->
       let outer = !current in
       let bindings =
         List.concat_map bindings ~f:(fun (binding : Parsetree.value_binding) ->

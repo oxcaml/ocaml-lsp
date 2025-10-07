@@ -374,7 +374,7 @@ module Merlin = struct
     ; typ : string
     ; doc : string option
     ; stack_or_heap : string option
-    ; syntax_doc : Query_protocol.syntax_doc_result option
+    ; syntax_doc : Query_protocol.Syntax_doc_result.t option
     }
 
   let type_enclosing ~(log_info : Lsp_timing_logger.t) doc pos verbosity ~with_syntax_doc =

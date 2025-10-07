@@ -151,6 +151,7 @@ module Complete_by_prefix = struct
           ; desc = typ
           ; info = ""
           ; deprecated = false (* TODO this is wrong *)
+          ; ppx_template_generated = false
           })
     in
     (* we need to json-ify completion params to put them in completion item's

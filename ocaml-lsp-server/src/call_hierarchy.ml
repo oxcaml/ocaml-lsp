@@ -207,13 +207,13 @@ let handle_incoming ~log_info (server : State.t Server.t) params =
   let { CallHierarchyIncomingCallsParams.item; _ } = params in
   let { CallHierarchyItem.uri; range; _ } = item in
   let%bind.Fiber_option merlin_doc = get_merlin_doc state uri in
-  let* locs, _synced =
+  let* occurrences, _synced =
     Document.Merlin.dispatch_exn
       ~log_info
       merlin_doc
       (Occurrences (`Ident_at (Position.logical range.end_), `Project))
   in
-  List.map locs ~f:(fun (loc : Loc.t) -> loc.loc_start.pos_fname, loc)
+  List.map occurrences ~f:(fun { loc; is_stale = _ } -> loc.loc_start.pos_fname, loc)
   |> Base.List.Assoc.sort_and_group ~compare:Base.String.compare
   |> batched_parallel ~batch_size:40 ~f:(fun (fn_name, locs) ->
     (* Using Map to only open one doc and create one parsetree per file name. *)

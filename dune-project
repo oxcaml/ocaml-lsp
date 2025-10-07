@@ -1,7 +1,7 @@
 (lang dune 3.0)
 (using cinaps 1.0)
 (name lsp)
-(version "1.19.0+jst")
+(version "1.19.0+ox")
 
 (implicit_transitive_deps false)
 
@@ -71,8 +71,8 @@ possible and does not make any assumptions about IO.
   (csexp (>= 1.5))
   (ocamlformat-rpc-lib (>= 0.21.0))
   (odoc :with-doc)
-  (odoc-parser (= 2.0.0))
-  (merlin-lib (= "5.2.1-502+jst"))
+  (odoc-parser (= "3.1.0+ox"))
+  (merlin-lib (= "5.2.1-502+ox"))
   ppx_yojson_conv
   core_unix
   async

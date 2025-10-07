@@ -13,11 +13,11 @@ let rename
     let command =
       Query_protocol.Occurrences (`Ident_at (Position.logical position), `Buffer)
     in
-    let+ locs, _desync = Document.Merlin.dispatch_exn ~log_info merlin command in
+    let+ occurences, _desync = Document.Merlin.dispatch_exn ~log_info merlin command in
     let version = Document.version doc in
     let source = Document.source doc in
     let edits =
-      List.map locs ~f:(fun (loc : Warnings.loc) ->
+      List.map occurences ~f:(fun {loc; is_stale = _ } ->
         let range = Range.of_loc loc in
         let make_edit () = TextEdit.create ~range ~newText:newName in
         match

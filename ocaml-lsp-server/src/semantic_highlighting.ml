@@ -520,7 +520,7 @@ end = struct
     | Pconst_unboxed_integer (_, _)
     | Pconst_unboxed_float (_, _) ->
       add_token loc (Token_type.of_builtin Number) Token_modifiers_set.empty
-    | Pconst_char _ | Pconst_string _ -> ()
+    | Pconst_char _ | Pconst_untagged_char _ | Pconst_string _ -> ()
   ;;
 
   let pexp_apply (self : Ast_iterator.iterator) (expr : Parsetree.expression) args =
@@ -553,14 +553,14 @@ end = struct
     | _ -> `Default_iterator
   ;;
 
-  let ppx_string_extension ~string ~string_loc ~delimiter ~local
+  let ppx_string_extension ~string ~string_loc ~delimiter
     : Parsetree.expression list =
     let parse_result =
       (* NOTE: This awkward dance is required as ppxlib's and ocamllsp's AST types
           (including their locations!) are not type equal to each other. *)
       let ({ loc_start; loc_end; loc_ghost } : Loc.t) = string_loc in
       Ppx_string.parse
-        ~config:(Ppx_string.config_for_string ~local)
+        ~config:(Ppx_string.config_for_string Local_input_heap_output)
         ~string_loc:{ loc_start; loc_end; loc_ghost }
         ~delimiter
         string
@@ -668,7 +668,7 @@ end = struct
            Option.iter vo ~f:(fun v -> self.expr self v));
         `Custom_iterator
       | Pexp_apply (expr, args) -> pexp_apply self expr args
-      | Pexp_let (_, _, _) -> `Default_iterator
+      | Pexp_let (_, _, _, _) -> `Default_iterator
       | Pexp_function (params, constraint_, function_body) ->
         List.iter params ~f:(fun (param : Ocaml_parsing.Parsetree.function_param) ->
           match param.pparam_desc with
@@ -716,6 +716,14 @@ end = struct
           lident lid (Token_type.of_builtin Property) ();
           if Loc.compare lid.loc exp.pexp_loc <> 0 (* handles field punning *)
           then self.expr self exp);
+        `Custom_iterator
+      | Pexp_idx (block_access, unboxed_accesses) ->
+        (match block_access with
+        | Baccess_field l -> lident l (Token_type.of_builtin Property) ()
+        | Baccess_array (_, _, e)
+        | Baccess_block (_, e) -> self.expr self e );
+        List.iter unboxed_accesses ~f:(fun (Parsetree.Uaccess_unboxed_field l) ->
+          lident l (Token_type.of_builtin Property) ());
         `Custom_iterator
       | Pexp_field (e, l) | Pexp_unboxed_field (e, l) ->
         self.expr self e;
@@ -768,7 +776,7 @@ end = struct
         self.expr self body;
         `Custom_iterator
       | Pexp_extension
-          ( { txt = ("string" | "string.global") as ext; loc = _ }
+          ( { txt = ("string" | "string.global"); loc = _ }
           , PStr
               [ { pstr_desc =
                     Pstr_eval
@@ -780,14 +788,8 @@ end = struct
                 ; _
                 }
               ] ) ->
-        let local =
-          match ext with
-          | "string" -> true
-          | "string.global" -> false
-          | _ -> assert false
-        in
         List.iter
-          (ppx_string_extension ~string ~string_loc ~delimiter ~local)
+          (ppx_string_extension ~string ~string_loc ~delimiter)
           ~f:(self.expr self);
         `Custom_iterator
       | Pexp_unreachable -> `Custom_iterator
@@ -796,7 +798,7 @@ end = struct
       | Pexp_while (_, _)
       | Pexp_for (_, _, _, _, _)
       | Pexp_coerce (_, _, _)
-      | Pexp_setinstvar (_, _)
+      | Pexp_setvar (_, _)
       | Pexp_override _
       | Pexp_letexception (_, _)
       | Pexp_assert _ | Pexp_lazy _

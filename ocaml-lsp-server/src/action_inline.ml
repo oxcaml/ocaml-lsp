@@ -66,7 +66,7 @@ let find_inline_task typedtree pos =
       match expr.exp_desc with
       | Texp_let
           ( Nonrecursive
-          , [ { vb_pat = { pat_desc = Tpat_var (inlined_var, { loc; _ }, _, _); _ }
+          , [ { vb_pat = { pat_desc = Tpat_var (inlined_var, { loc; _ }, _, _, _); _ }
               ; vb_expr = inlined_expr
               ; _
               }
@@ -81,7 +81,7 @@ let find_inline_task typedtree pos =
       match item.str_desc with
       | Tstr_value
           ( Nonrecursive
-          , [ { vb_pat = { pat_desc = Tpat_var (inlined_var, { loc; _ }, _, _); _ }
+          , [ { vb_pat = { pat_desc = Tpat_var (inlined_var, { loc; _ }, _, _, _); _ }
               ; vb_expr = inlined_expr
               ; _
               }
@@ -158,8 +158,8 @@ end = struct
     in
     let pat_iter (type k) (iter : I.iterator) (pat : k Typedtree.general_pattern) =
       match pat.pat_desc with
-      | Tpat_var (id, { loc; _ }, _, _) -> paths := Loc.Map.set !paths loc (Pident id)
-      | Tpat_alias (pat, id, { loc; _ }, _, _, _) ->
+      | Tpat_var (id, { loc; _ }, _, _, _) -> paths := Loc.Map.set !paths loc (Pident id)
+      | Tpat_alias (pat, id, { loc; _ }, _, _, _, _) ->
         paths := Loc.Map.set !paths loc (Pident id);
         I.default_iterator.pat iter pat
       | _ -> I.default_iterator.pat iter pat
@@ -209,7 +209,7 @@ let same_path paths (id : _ H.with_loc) (id' : _ H.with_loc) =
 
 let beta_reduce (paths : Paths.t) (app : Parsetree.expression) =
   let rec beta_reduce_arg body (pat : Parsetree.pattern) arg =
-    let with_let () = H.Exp.let_ Nonrecursive [ H.Vb.mk pat arg ] body in
+    let with_let () = H.Exp.let_ Immutable Nonrecursive [ H.Vb.mk pat arg ] body in
     let with_subst param = subst (same_path paths) arg param body in
     match pat.ppat_desc with
     | Ppat_any | Ppat_construct ({ txt = Lident "()"; _ }, _) ->

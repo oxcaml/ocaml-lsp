@@ -87,14 +87,14 @@ module Merlin : sig
   val syntax_doc
     :  Mpipeline.t
     -> Msource.position
-    -> Query_protocol.syntax_doc_result option
+    -> Query_protocol.Syntax_doc_result.t option
 
   type type_enclosing =
     { loc : Loc.t
     ; typ : string
     ; doc : string option
     ; stack_or_heap : string option
-    ; syntax_doc : Query_protocol.syntax_doc_result option
+    ; syntax_doc : Query_protocol.Syntax_doc_result.t option
     }
 
   val type_enclosing

@@ -351,7 +351,7 @@ let text_document_lens
   | `Other -> Fiber.return []
   | `Merlin m when Document.Merlin.kind m = Intf -> Fiber.return []
   | `Merlin merlin_doc ->
-    let+ outline = Document.Merlin.dispatch_exn ~log_info merlin_doc Outline in
+    let+ outline = Document.Merlin.dispatch_exn ~log_info merlin_doc (Outline {include_types = true }) in
     let rec symbol_info_of_outline_item (item : Query_protocol.item) =
       let children = List.concat_map item.children ~f:symbol_info_of_outline_item in
       match item.outline_type with
@@ -426,7 +426,7 @@ let references
   match Document.kind doc with
   | `Other -> Fiber.return None
   | `Merlin merlin_doc ->
-    let* locs, synced =
+    let* occurences, synced =
       Document.Merlin.dispatch_exn
         ~log_info
         merlin_doc
@@ -450,7 +450,7 @@ let references
       | _ -> Fiber.return ()
     in
     Some
-      (List.map locs ~f:(fun loc ->
+      (List.map occurences ~f:(fun { loc; is_stale = _ } ->
          let range = Range.of_loc loc in
          let uri =
            match loc.loc_start.pos_fname with
@@ -476,14 +476,14 @@ let highlight
   match Document.kind doc with
   | `Other -> Fiber.return None
   | `Merlin m ->
-    let+ locs, _synced =
+    let+ occurrences, _synced =
       Document.Merlin.dispatch_exn
         ~log_info
         m
         (Occurrences (`Ident_at (Position.logical position), `Buffer))
     in
     let lsp_locs =
-      List.filter_map locs ~f:(fun loc ->
+      List.filter_map occurrences ~f:(fun { loc; is_stale = _ } ->
         let range = Range.of_loc loc in
         (* filter out multi-line ranges, since those are very noisy and happen
            a lot with certain PPXs *)
@@ -731,12 +731,13 @@ let on_request
         match Document.kind doc with
         | `Other -> Fiber.return None
         | `Merlin merlin_doc ->
-          let+ locs, _synced =
+          let+ occurrences, _synced =
             Document.Merlin.dispatch_exn
               ~log_info
               merlin_doc
               (Occurrences (`Ident_at (Position.logical position), `Buffer))
           in
+          let locs = List.map occurrences ~f:(fun { loc; is_stale = _ } -> loc) in
           let loc =
             List.find_opt locs ~f:(fun loc ->
               let range = Range.of_loc loc in
@@ -1090,7 +1091,8 @@ let run channel ~dot_merlin =
   Merlin_utils.Lib_config.set_program_name "ocamllsp";
   Merlin_utils.Lib_config.System.set_run_in_directory (run_in_directory ());
   Merlin_config.dot_merlin := dot_merlin;
-  Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
+  (Unix.putenv [@alert "-unsafe_multidomain"])
+    "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   let main =
     Fiber.of_thunk (fun () ->
       let* input, output = stream_of_channel channel in
