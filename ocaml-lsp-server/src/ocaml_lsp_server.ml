@@ -140,7 +140,7 @@ let initialize_info (client_capabilities : ClientCapabilities.t) : InitializeRes
       ~codeLensProvider
       ~referencesProvider:(`Bool true)
       ~documentHighlightProvider:(`Bool true)
-      ~documentFormattingProvider:(`Bool false)
+      ~documentFormattingProvider:(`Bool true)
       ~selectionRangeProvider:(`Bool true)
       ~documentSymbolProvider:(`Bool true)
       ~workspaceSymbolProvider:(`Bool true)
