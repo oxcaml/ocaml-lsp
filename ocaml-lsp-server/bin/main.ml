@@ -36,14 +36,12 @@ let command =
            "PID Process id of client. When passed, the server will exit when this client \
             dies."
      and client_existence_check_interval =
-       flag_optional_with_default_doc
+       flag
          "check-client-existence-every"
-         Time_ns.Span.arg_type
-         [%sexp_of: Time_ns.Span.t]
-         ~default:(Time_ns.Span.of_int_sec 10)
+         (optional_with_default (Time_ns.Span.of_int_sec 10) Time_ns.Span.arg_type)
          ~doc:
            "SPAN How frequently to check if client exists. Only relevant with \
-            [-client-pid]."
+            [-client-pid]. (default: 10s)"
      and dot_merlin =
        flag
          "dot-merlin"

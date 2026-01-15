@@ -36,7 +36,7 @@ let make
 let log_lsp_timing ~wall_time (t : t) =
   if not am_running_test
   then
-    [%log.global.info
+    [%log.info
       "lsp timing"
         (wall_time : float)
         ~event_index:(t.event_index : int)
@@ -82,7 +82,7 @@ let log_merlin_timing ~wall_time ~timing_breakdown t =
     let ppx = extract "ppx" in
     let reader = extract "reader" in
     let typer = extract "typer" in
-    [%log.global.info
+    [%log.info
       "merlin timing"
         (wall_time : float)
         (total_time : float)
@@ -102,7 +102,7 @@ let log_merlin_timing ~wall_time ~timing_breakdown t =
 let log_event_start t =
   if not am_running_test
   then
-    [%log.global.info
+    [%log.info
       "lsp event"
         ~event_index:(t.event_index : int)
         ~action:(t.action : string)
