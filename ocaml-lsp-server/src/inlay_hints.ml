@@ -134,7 +134,8 @@ let let_syntax_at typer pos =
     | Some ident ->
       (try
          let let_syntax : Longident.t = Ldot (Ldot (ident, "Let_syntax"), "Let_syntax") in
-         let _, decl' = Env.find_module_by_name let_syntax env in
+         let _, decl' = Env.find_module_by_name_lazy let_syntax env in
+         let decl' = Ocaml_typing.Subst.Lazy.force_module_decl decl' in
          if Ocaml_typing.Shape.Uid.equal decl.md_uid decl'.md_uid
          then ident
          else to_lident path
@@ -144,7 +145,8 @@ let let_syntax_at typer pos =
   in
   List.find_map (Mtyper.node_at typer pos) ~f:(fun (env, _) ->
     try
-      let path, decl = Env.find_module_by_name (Lident "Let_syntax") env in
+      let path, decl = Env.find_module_by_name_lazy (Lident "Let_syntax") env in
+      let decl = Ocaml_typing.Subst.Lazy.force_module_decl decl in
       match path with
       | Pdot (Pdot (path, "Let_syntax"), "Let_syntax") ->
         Some (drop_library_name_if_in_scope env decl path)
