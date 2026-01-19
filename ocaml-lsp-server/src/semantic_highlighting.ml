@@ -394,8 +394,8 @@ end = struct
       | Ptyp_alias (_, _, _)
       | Ptyp_arrow _ | Ptyp_extension _ | Ptyp_package _ | Ptyp_object _
       | Ptyp_open (_, _) | Ptyp_of_kind _
-      | Ptyp_tuple _ | Ptyp_unboxed_tuple _ -> `Default_iterator
-      | _ -> assert false
+      | Ptyp_tuple _ | Ptyp_unboxed_tuple _
+      | Ptyp_quote _ | Ptyp_splice _ -> `Default_iterator
     in
     match iter with
     | `Default_iterator -> Ast_iterator.default_iterator.typ self ct
@@ -807,8 +807,8 @@ end = struct
       | Pexp_object _ | Pexp_pack _
       | Pexp_open (_, _)
       | Pexp_extension _ | Pexp_comprehension _ | Pexp_hole
-      | Pexp_overwrite (_, _) -> `Default_iterator
-      | _ -> assert false
+      | Pexp_overwrite (_, _)
+      | Pexp_quote _ | Pexp_splice _ -> `Default_iterator
     with
     | `Default_iterator -> Ast_iterator.default_iterator.expr self exp
     | `Custom_iterator -> self.attributes self pexp_attributes
@@ -960,9 +960,9 @@ end = struct
        | Ptyp_variant (_, _, _)
        | Ptyp_poly (_, _)
        | Ptyp_open (_, _)
-       | Ptyp_of_kind _ | Ptyp_tuple _ | Ptyp_unboxed_tuple _ | Ptyp_any _ | Ptyp_var _ ->
-         Token_type.of_builtin Variable
-       | _ -> assert false)
+       | Ptyp_of_kind _ | Ptyp_tuple _ | Ptyp_unboxed_tuple _ | Ptyp_any _ | Ptyp_var _
+       | Ptyp_quote _ | Ptyp_splice _ ->
+         Token_type.of_builtin Variable)
       (Token_modifiers_set.singleton Declaration);
     self.typ self pval_type;
     (* TODO: handle pval_prim ? *)

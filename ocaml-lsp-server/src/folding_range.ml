@@ -222,8 +222,9 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
       | Pexp_unreachable
       | Pexp_hole
       | Pexp_overwrite _
-      | Pexp_idx _ -> Ast_iterator.default_iterator.expr self expr
-      | _ -> assert false
+      | Pexp_idx _
+      | Pexp_quote _
+      | Pexp_splice _ -> Ast_iterator.default_iterator.expr self expr
     in
     let module_binding
       (self : Ast_iterator.iterator)
