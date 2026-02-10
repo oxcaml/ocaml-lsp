@@ -97,4 +97,27 @@ let get_pos ~(params : Jsonrpc.Structured.t option) =
     List.Assoc.find ~equal:String.equal params "position"
     |> Option.map ~f:Position.t_of_yojson
   | _ -> None
+let to_chars s = List.init (String.length s) ~f:(fun e -> String.get s e)
+
+let rec parse_formatted_parameters pdepth acc strl res c : (int * int) list =
+  match strl with
+  | [] ->
+    (* The last element is the result type, it should not appear as a parameter. *)
+    res
+  | '-' :: '>' :: tl when pdepth = 0 ->
+    (* A parameter is delimited by a '->' and if there is no open parenthesis. *)
+    let res = (c - List.length acc, c - 1) :: res in
+    parse_formatted_parameters pdepth [] tl res (c + 2)
+  | hd :: tl ->
+    let pdepth =
+      match hd with
+      | '(' -> pdepth + 1
+      | ')' -> pdepth - 1
+      | _ -> pdepth
+    in
+    parse_formatted_parameters pdepth (hd :: acc) tl res (c + 1)
+;;
+
+let parse_formatted_parameters str ~offset =
+  List.rev (parse_formatted_parameters 0 [] (to_chars str) [] offset)
 ;;
