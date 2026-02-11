@@ -8,3 +8,4 @@ module Position = Position
 module Doc_to_md = Doc_to_md
 module Testing = Testing
 module Custom_request = Custom_request
+module Util = Util
