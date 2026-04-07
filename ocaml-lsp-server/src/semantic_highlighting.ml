@@ -395,7 +395,8 @@ end = struct
       | Ptyp_arrow _ | Ptyp_extension _ | Ptyp_package _ | Ptyp_object _
       | Ptyp_open (_, _) | Ptyp_of_kind _
       | Ptyp_tuple _ | Ptyp_unboxed_tuple _
-      | Ptyp_quote _ | Ptyp_splice _ -> `Default_iterator
+      | Ptyp_quote _ | Ptyp_splice _
+      | Ptyp_newlayout _ | Ptyp_repr _ -> `Default_iterator
     in
     match iter with
     | `Default_iterator -> Ast_iterator.default_iterator.typ self ct
@@ -721,8 +722,7 @@ end = struct
       | Pexp_idx (block_access, unboxed_accesses) ->
         (match block_access with
         | Baccess_field l -> lident l (Token_type.of_builtin Property) ()
-        | Baccess_array (_, _, e)
-        | Baccess_block (_, e) -> self.expr self e );
+        | Baccess_block (_, e) -> self.expr self e);
         List.iter unboxed_accesses ~f:(fun (Parsetree.Uaccess_unboxed_field l) ->
           lident l (Token_type.of_builtin Property) ());
         `Custom_iterator
@@ -808,7 +808,9 @@ end = struct
       | Pexp_open (_, _)
       | Pexp_extension _ | Pexp_comprehension _ | Pexp_hole
       | Pexp_overwrite (_, _)
-      | Pexp_quote _ | Pexp_splice _ -> `Default_iterator
+      | Pexp_quote _ | Pexp_splice _
+      | Pexp_unboxed_unit | Pexp_unboxed_bool _
+      | Pexp_borrow _ -> `Default_iterator
     with
     | `Default_iterator -> Ast_iterator.default_iterator.expr self exp
     | `Custom_iterator -> self.attributes self pexp_attributes
@@ -879,7 +881,9 @@ end = struct
       | Ppat_unboxed_tuple _
       | Ppat_lazy _
       | Ppat_any
-      | Ppat_interval _ -> `Default_iterator
+      | Ppat_interval _
+      | Ppat_unboxed_unit
+      | Ppat_unboxed_bool _ -> `Default_iterator
     with
     | `Default_iterator -> Ast_iterator.default_iterator.pat self pat
     | `Custom_iterator -> self.attributes self ppat_attributes
@@ -944,6 +948,7 @@ end = struct
      ; pval_attributes
      ; pval_loc = _
      ; pval_modalities = _
+     ; _
      } :
       Parsetree.value_description)
     =
@@ -961,7 +966,8 @@ end = struct
        | Ptyp_poly (_, _)
        | Ptyp_open (_, _)
        | Ptyp_of_kind _ | Ptyp_tuple _ | Ptyp_unboxed_tuple _ | Ptyp_any _ | Ptyp_var _
-       | Ptyp_quote _ | Ptyp_splice _ ->
+       | Ptyp_quote _ | Ptyp_splice _
+       | Ptyp_newlayout _ | Ptyp_repr _ ->
          Token_type.of_builtin Variable)
       (Token_modifiers_set.singleton Declaration);
     self.typ self pval_type;

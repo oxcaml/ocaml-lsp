@@ -157,6 +157,8 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
       | Ppat_exception _
       | Ppat_extension _
       | Ppat_open _
+      | Ppat_unboxed_unit
+      | Ppat_unboxed_bool _
       | Ppat_any -> Ast_iterator.default_iterator.pat self p
     in
     let expr (self : Ast_iterator.iterator) (expr : Parsetree.expression) =
@@ -224,7 +226,10 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
       | Pexp_overwrite _
       | Pexp_idx _
       | Pexp_quote _
-      | Pexp_splice _ -> Ast_iterator.default_iterator.expr self expr
+      | Pexp_splice _
+      | Pexp_unboxed_unit
+      | Pexp_unboxed_bool _
+      | Pexp_borrow _ -> Ast_iterator.default_iterator.expr self expr
     in
     let module_binding
       (self : Ast_iterator.iterator)
@@ -252,7 +257,7 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
       | Pstr_class _
       | Pstr_modtype _
       | Pstr_type _
-      | Pstr_kind_abbrev _
+      | Pstr_jkind _
       | Pstr_module _
       | Pstr_eval _
       | Pstr_recmodule _

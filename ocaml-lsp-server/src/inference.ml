@@ -37,7 +37,7 @@ let infer_missing_intf_for_impl ~log_info impl_doc intf_doc =
        let* intf_cfg = Document.Merlin.mconfig intf in
        let verbosity = intf_cfg.query.verbosity in
        Printtyp.wrap_printing_env ~verbosity env (fun () ->
-         Format.asprintf "%a@." Printtyp.signature sig_update)
+         Format.asprintf "%a@." (Merlin_utils.Format_doc.compat Printtyp.signature) sig_update)
        |> Fiber.return
      | _ -> Code_error.raise "promblem encountered with Merlin typer_result" [])
   | _ -> Code_error.raise "expected implementation and interface documents" []
@@ -63,7 +63,7 @@ let infer_intf_for_impl ~log_info doc =
       let env = Mtyper.initial_env typer in
       let verbosity = (Mpipeline.final_config pipeline).query.verbosity in
       Printtyp.wrap_printing_env ~verbosity env (fun () ->
-        Format.asprintf "%a@." Printtyp.signature sig_))
+        Format.asprintf "%a@." (Merlin_utils.Format_doc.compat Printtyp.signature) sig_))
 ;;
 
 let infer_intf ~log_info (state : State.t) intf_doc =
@@ -108,7 +108,8 @@ let top_level_id (item : Typedtree.signature_item) =
   | Typedtree.Tsig_include _
   | Typedtree.Tsig_class _
   | Typedtree.Tsig_class_type _
-  | Typedtree.Tsig_attribute _ -> None
+  | Typedtree.Tsig_attribute _
+  | Typedtree.Tsig_jkind _ -> None
 ;;
 
 (** Represents an item that's present in the existing interface and has a (possibly
@@ -248,7 +249,7 @@ let update_signatures
            let env = Mtyper.initial_env intf_typer in
            Fiber.return
              (Printtyp.wrap_printing_env ~verbosity env (fun () ->
-                Format.asprintf "%a@." Printtyp.signature [ sig_item ]))
+                Format.asprintf "%a@." (Merlin_utils.Format_doc.compat Printtyp.signature) [ sig_item ]))
          in
          let new_sigs = get_doc_signature impl_typer in
          build_signature_edits ~old_intf ~new_sigs ~range ~formatter
