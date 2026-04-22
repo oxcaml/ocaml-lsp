@@ -97,7 +97,7 @@ let rec mark_value_unused_edit name contexts =
     (match m_field_edit with
      | Some e -> Some e
      | None -> mark_value_unused_edit name cs)
-  | Pattern { pat_desc = Tpat_var { id = ident; _ }; pat_loc = loc; _ } :: _ ->
+  | Pattern { pat_desc = Tpat_var (ident, _, _, _, _); pat_loc = loc; _ } :: _ ->
     if Ident.name ident = name
     then
       let+ start = Position.of_lexical_position loc.loc_start in

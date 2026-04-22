@@ -396,7 +396,7 @@ end = struct
       | Ptyp_open (_, _) | Ptyp_of_kind _
       | Ptyp_tuple _ | Ptyp_unboxed_tuple _
       | Ptyp_quote _ | Ptyp_splice _
-      | Ptyp_newlayout _ | Ptyp_repr _ -> `Default_iterator
+      | Ptyp_repr _ -> `Default_iterator
     in
     match iter with
     | `Default_iterator -> Ast_iterator.default_iterator.typ self ct
@@ -967,7 +967,7 @@ end = struct
        | Ptyp_open (_, _)
        | Ptyp_of_kind _ | Ptyp_tuple _ | Ptyp_unboxed_tuple _ | Ptyp_any _ | Ptyp_var _
        | Ptyp_quote _ | Ptyp_splice _
-       | Ptyp_newlayout _ | Ptyp_repr _ ->
+       | Ptyp_repr _ ->
          Token_type.of_builtin Variable)
       (Token_modifiers_set.singleton Declaration);
     self.typ self pval_type;
