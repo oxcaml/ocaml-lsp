@@ -26,7 +26,7 @@ module SyntaxDocumentation = struct
 end
 
 module MerlinDiagnostics = struct
-  type t = { enable : bool [@default false] }
+  type t = { enable : bool [@default true] }
   [@@deriving yojson] [@@yojson.allow_extra_fields]
 end
 

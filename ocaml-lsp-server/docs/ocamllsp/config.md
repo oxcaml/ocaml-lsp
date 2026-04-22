@@ -23,11 +23,11 @@ interface config {
   codelens: { enable : boolean }
 
   /**
-  * Enable/Disable Dune diagnostics
+  * Enable/Disable Merlin (Dune) diagnostics
   * @default true
   * @since 1.18
   */
-  duneDiagnostics: { enable : boolean }
+  merlinDiagnostics: { enable : boolean }
 
   /**
   * Enable/Disable Inlay Hints
