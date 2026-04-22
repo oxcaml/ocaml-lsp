@@ -19,7 +19,7 @@ let check_shadowing (inlined_expr : Typedtree.expression) new_env =
   let exception Env_mismatch of (Longident.t * [ `Unbound | `Shadowed ]) in
   let expr_iter (iter : I.iterator) (expr : Typedtree.expression) =
     match expr.exp_desc with
-    | Texp_ident (path, { txt = ident; _ }, _, _, _) ->
+    | Texp_ident (path, { txt = ident; _ }, _, _, _, _) ->
       let in_orig_env =
         find_path_by_name ident orig_env
         |> Option.map ~f:(Path.same path)
@@ -153,7 +153,7 @@ end = struct
     let paths = ref Loc.Map.empty in
     let expr_iter (iter : I.iterator) (expr : Typedtree.expression) =
       match expr.exp_desc with
-      | Texp_ident (path, { loc; _ }, _, _, _) -> paths := Loc.Map.set !paths loc path
+      | Texp_ident (path, { loc; _ }, _, _, _, _) -> paths := Loc.Map.set !paths loc path
       | _ -> I.default_iterator.expr iter expr
     in
     let pat_iter (type k) (iter : I.iterator) (pat : k Typedtree.general_pattern) =
@@ -292,7 +292,7 @@ let inline_edits pipeline task =
     =
     match label, m_arg_expr with
     (* handle the labeled argument shorthand `f ~x` when inlining `x` *)
-    | Labelled name, Some { exp_desc = Texp_ident (Pident id, { loc; _ }, _, _, _); _ }
+    | Labelled name, Some { exp_desc = Texp_ident (Pident id, { loc; _ }, _, _, _, _); _ }
     (* inlining is allowed for optional arguments that are being passed a Some
        parameter, i.e. `x` may be inlined in `let x = 1 in (fun ?(x = 0) -> x)
        ~x` *)
@@ -303,7 +303,7 @@ let inline_edits pipeline task =
               Texp_construct
                 ( _
                 , _
-                , [ { exp_desc = Texp_ident (Pident id, { loc; _ }, _, _, _); _ } ]
+                , [ { exp_desc = Texp_ident (Pident id, { loc; _ }, _, _, _, _); _ } ]
                 , _ )
           ; _
           } )
@@ -327,7 +327,7 @@ let inline_edits pipeline task =
     match expr.exp_desc with
     (* when inlining into an application context, attempt to beta reduce the
        result *)
-    | Texp_apply ({ exp_desc = Texp_ident (Pident id, _, _, _, _); _ }, _, _, _, _)
+    | Texp_apply ({ exp_desc = Texp_ident (Pident id, _, _, _, _, _); _ }, _, _, _, _)
       when Ident.same task.inlined_var id && not_shadowed expr.exp_env ->
       let reduced_pexpr =
         let app_pexpr = find_parsetree_loc_exn pipeline expr.exp_loc in
@@ -350,7 +350,7 @@ let inline_edits pipeline task =
           | Omitted _ -> None
         in
         arg_iter expr.exp_env iter l e)
-    | Texp_ident (Pident id, { loc; _ }, _, _, _)
+    | Texp_ident (Pident id, { loc; _ }, _, _, _, _)
       when Ident.same task.inlined_var id && not_shadowed expr.exp_env ->
       insert_edit newText loc
     | _ -> I.default_iterator.expr iter expr

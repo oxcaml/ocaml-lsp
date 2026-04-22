@@ -395,6 +395,7 @@ end = struct
       | Ptyp_arrow _ | Ptyp_extension _ | Ptyp_package _ | Ptyp_object _
       | Ptyp_open (_, _) | Ptyp_of_kind _
       | Ptyp_tuple _ | Ptyp_unboxed_tuple _
+      | Ptyp_repr (_, _)
       | Ptyp_quote _ | Ptyp_splice _ -> `Default_iterator
     in
     match iter with
@@ -808,6 +809,7 @@ end = struct
       | Pexp_open (_, _)
       | Pexp_extension _ | Pexp_comprehension _ | Pexp_hole
       | Pexp_overwrite (_, _)
+      | Pexp_unboxed_unit | Pexp_unboxed_bool _ | Pexp_borrow _
       | Pexp_quote _ | Pexp_splice _ -> `Default_iterator
     with
     | `Default_iterator -> Ast_iterator.default_iterator.expr self exp
@@ -877,6 +879,8 @@ end = struct
       | Ppat_extension _
       | Ppat_tuple _
       | Ppat_unboxed_tuple _
+      | Ppat_unboxed_unit
+      | Ppat_unboxed_bool _
       | Ppat_lazy _
       | Ppat_any
       | Ppat_interval _ -> `Default_iterator
@@ -944,6 +948,7 @@ end = struct
      ; pval_attributes
      ; pval_loc = _
      ; pval_modalities = _
+     ; pval_poly = _
      } :
       Parsetree.value_description)
     =
@@ -961,6 +966,7 @@ end = struct
        | Ptyp_poly (_, _)
        | Ptyp_open (_, _)
        | Ptyp_of_kind _ | Ptyp_tuple _ | Ptyp_unboxed_tuple _ | Ptyp_any _ | Ptyp_var _
+       | Ptyp_repr (_, _)
        | Ptyp_quote _ | Ptyp_splice _ ->
          Token_type.of_builtin Variable)
       (Token_modifiers_set.singleton Declaration);

@@ -35,7 +35,7 @@ let extract_ident (exp_desc : Typedtree.expression_desc) =
     | Lapply (p1, p2) -> Format.fprintf ppf "%a(%a)" longident p1 longident p2
   in
   match exp_desc with
-  | Texp_ident (_, { txt = li; _ }, _, _, _) ->
+  | Texp_ident (_, { txt = li; _ }, _, _, _, _) ->
     let ppf, to_string = Format.to_string () in
     longident ppf li;
     Some (to_string ())
@@ -49,7 +49,7 @@ let extract_ident (exp_desc : Typedtree.expression_desc) =
 let pp_type env ppf ty =
   let module Printtyp = Type_utils.Printtyp in
   Printtyp.wrap_printing_env env ~verbosity:(Lvl 0) (fun () ->
-    Printtyp.shared_type_scheme ppf ty)
+    Printtyp.Compat.shared_type_scheme ppf ty)
 ;;
 
 let rec type_is_arrow ty =

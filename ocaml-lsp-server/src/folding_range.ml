@@ -146,6 +146,8 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
           push { Range.start = lident_range.end_; end_ = pat_range.end_ })
       | Ppat_var _ | Ppat_alias _ | Ppat_constant _ | Ppat_interval _ | Ppat_tuple _
       | Ppat_unboxed_tuple (_, _)
+      | Ppat_unboxed_unit
+      | Ppat_unboxed_bool _
       | Ppat_construct _
       | Ppat_variant _
       | Ppat_array _
@@ -223,6 +225,9 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
       | Pexp_hole
       | Pexp_overwrite _
       | Pexp_idx _
+      | Pexp_unboxed_unit
+      | Pexp_unboxed_bool _
+      | Pexp_borrow _
       | Pexp_quote _
       | Pexp_splice _ -> Ast_iterator.default_iterator.expr self expr
     in
@@ -252,7 +257,7 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
       | Pstr_class _
       | Pstr_modtype _
       | Pstr_type _
-      | Pstr_kind_abbrev _
+      | Pstr_jkind _
       | Pstr_module _
       | Pstr_eval _
       | Pstr_recmodule _
