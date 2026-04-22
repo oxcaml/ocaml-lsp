@@ -78,6 +78,8 @@ module String = struct
     let substr_index_exn = substr_index_exn
     let substr_index = substr_index
     let prefix = prefix
+    let is_prefix = is_prefix
+    let is_suffix = is_suffix
     let lfindi = lfindi
     let filter = filter
   end
