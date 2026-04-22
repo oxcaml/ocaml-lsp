@@ -722,6 +722,7 @@ end = struct
       | Pexp_idx (block_access, unboxed_accesses) ->
         (match block_access with
         | Baccess_field l -> lident l (Token_type.of_builtin Property) ()
+        | Baccess_array (_, _, e) -> self.expr self e
         | Baccess_block (_, e) -> self.expr self e);
         List.iter unboxed_accesses ~f:(fun (Parsetree.Uaccess_unboxed_field l) ->
           lident l (Token_type.of_builtin Property) ());
