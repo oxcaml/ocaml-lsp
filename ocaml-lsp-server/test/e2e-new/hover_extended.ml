@@ -544,39 +544,6 @@ let f g x y =
     |}]
 ;;
 
-let%expect_test "function on the stack" =
-  let source =
-    {ocaml|
-let f g =
-  exclave_ fun x -> g x
-;;
-|ocaml}
-  in
-  let position = Position.create ~line:2 ~character:11 in
-  let req client =
-    let* resp = hover_extended client position None in
-    let () = print_hover_extended resp in
-    Fiber.return ()
-  in
-  let%map.Deferred () = Helpers.test source req in
-  [%expect
-    {|
-    {
-      "verbosity": 0,
-      "canIncreaseVerbosity": true,
-      "canDecreaseVerbosity": false,
-      "contents": {
-        "kind": "plaintext",
-        "value": "'a -> 'b\n***\nAllocation: stack"
-      },
-      "range": {
-        "start": { "line": 2, "character": 11 },
-        "end": { "line": 2, "character": 23 }
-      }
-    }
-    |}]
-;;
-
 let%expect_test "can hover a ppx" =
   let source =
     {ocaml|
@@ -662,8 +629,8 @@ type foo : value mod portable
           unforkable
           yielding
           once
-          stateful
           unique
+          stateful
           read_write
           uncontended
           static
@@ -683,8 +650,8 @@ type foo : value mod portable
           unforkable
           yielding
           once
-          stateful
           unique
+          stateful
           read_write
           uncontended
           static

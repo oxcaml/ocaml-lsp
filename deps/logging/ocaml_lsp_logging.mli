@@ -124,8 +124,7 @@ module Session_info : sig
     { username : string
     ; deployment_stage : Stage.t
     ; log_paths_and_features : bool
-    ; editor : string
-    ; editor_version : string
+    ; client_info : Lsp.Types.Client_info.t option
     ; host : string
     ; ocaml_version : string
     ; build_version_jane : string option
@@ -139,10 +138,13 @@ module Session_info : sig
 
   val create
     :  deployment_stage:Stage.t
-    -> editor:string
-    -> editor_version:string
+    -> client_info:Lsp.Types.Client_info.t option
     -> worker_name:string option
     -> t
+
+  val get_editor_name : t -> string
+  val get_editor_version : t -> string
+  val get_ai_model_name : t -> string option
 end
 
 module Structured_logging : sig
@@ -207,8 +209,7 @@ end
 
 val init
   :  deployment_stage:Stage.t
-  -> editor:string
-  -> editor_version:string
+  -> client_info:Lsp.Types.Client_info.t option
   -> worker_name:string option
   -> t Async.Deferred.t
 

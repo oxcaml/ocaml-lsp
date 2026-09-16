@@ -66,7 +66,7 @@ let enclosing_pos pipeline pos =
    silences the 'unused value' warning. *)
 let rec mark_value_unused_edit name contexts =
   match contexts with
-  | Browse_raw.Pattern { pat_desc = Tpat_record (pats, _, _, _); _ } :: cs ->
+  | Browse_raw.Pattern { pat_desc = Tpat_record (pats, _, _); _ } :: cs ->
     let m_field_edit =
       List.find_map
         pats

@@ -3,8 +3,8 @@ open Async
 open Test.Import
 
 let%expect_test "it should allow double opening the same document" =
-  let diagnostics = Ocaml_lsp_fiber_shims.Mvar.create () in
-  let drain_diagnostics () = Ocaml_lsp_fiber_shims.Mvar.take diagnostics in
+  let diagnostics = Fiber.Mvar.create () in
+  let drain_diagnostics () = Fiber.Mvar.read diagnostics in
   let handler =
     let on_request
       (type resp state)
@@ -26,7 +26,7 @@ let%expect_test "it should allow double opening the same document" =
       ~on_notification:(fun _ n ~event_index:_ ->
         match n with
         | PublishDiagnostics _ ->
-          let+ r = Ocaml_lsp_fiber_shims.Mvar.put diagnostics () in
+          let+ r = Fiber.Mvar.write diagnostics () in
           r, None
         | _ -> Fiber.return ((), None))
       ~on_request:{ Client.Handler.on_request }

@@ -57,15 +57,16 @@ let update t { DidChangeConfigurationParams.settings } =
          | Some (`Assoc [ ("enable", `Bool b) ]) ->
            merge
              (Some
-                { Config_data.WhichDiagnostics.merlin_syntax = b
+                { Config_data.WhichDiagnostics.default with
+                  merlin_syntax = b
                 ; merlin_typing = b
-                ; dune = false
                 })
              new_data.which_diagnostics
          | None | Some _ -> new_data.which_diagnostics)
       | _ -> new_data.which_diagnostics
     in
     { Config_data.codelens = merge t.data.codelens new_data.codelens
+    ; deoxidize_lens = merge t.data.deoxidize_lens new_data.deoxidize_lens
     ; extended_hover = merge t.data.extended_hover new_data.extended_hover
     ; which_diagnostics = merge t.data.which_diagnostics which_diagnostics
     ; inlay_hints = merge t.data.inlay_hints new_data.inlay_hints
@@ -76,7 +77,7 @@ let update t { DidChangeConfigurationParams.settings } =
     ; ppx_css_colors = merge t.data.ppx_css_colors new_data.ppx_css_colors
     ; remote_lsp_fallback = merge t.data.remote_lsp_fallback new_data.remote_lsp_fallback
     ; dune_build_on_open = merge t.data.dune_build_on_open new_data.dune_build_on_open
-    ; use_fast_compl = merge t.data.use_fast_compl new_data.use_fast_compl
+    ; fast_compl = merge t.data.fast_compl new_data.fast_compl
     ; fuzzy_completion = merge t.data.fuzzy_completion new_data.fuzzy_completion
     ; filter_double_underscore =
         merge t.data.filter_double_underscore new_data.filter_double_underscore
@@ -86,32 +87,12 @@ let update t { DidChangeConfigurationParams.settings } =
   Fiber.return { t with wheel; data }
 ;;
 
-let remote_lsp_fallback_enabled t =
-  match t.data.remote_lsp_fallback with
-  | Some { enable } -> enable
-  | None -> false
-;;
-
-let which_diagnostics t =
-  match t.data.which_diagnostics with
-  | Some choices -> choices
-  | None -> { merlin_syntax = false; merlin_typing = false; dune = false }
-;;
+let remote_lsp_fallback_enabled t = Config_data.is_remote_lsp_fallback_enabled t.data
+let which_diagnostics t = Config_data.which_diagnostics t.data
 
 let shorten_merlin_diagnostics t =
-  match t.data.shorten_merlin_diagnostics with
-  | Some { enable = true } | None -> true
-  | Some { enable = false } -> false
+  Config_data.is_shorten_merlin_diagnostics_enabled t.data
 ;;
 
-let dune_build_on_open t =
-  match t.data.dune_build_on_open with
-  | Some { enable } -> enable
-  | None -> false
-;;
-
-let use_fast_compl t =
-  match t.data.use_fast_compl with
-  | Some { enable } -> enable
-  | None -> false
-;;
+let dune_build_on_open t = Config_data.is_dune_build_on_open_enabled t.data
+let fast_compl t = Config_data.is_fast_compl_enabled t.data

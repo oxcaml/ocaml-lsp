@@ -1,6 +1,6 @@
 (library
  (name ocaml_lsp_e2e_tests)
- (libraries async core expect_test_helpers_async ocaml_lsp_fiber lev_fiber_async lsp lsp_fiber lsp_json_rpc_types ocaml_lsp_fiber_shims ocaml_lsp_test_lib ocaml_lsp_server spawn unix yojson)
+ (libraries async core expect_test_helpers_async ocaml_lsp_fiber lev_fiber_async lsp lsp_fiber lsp_json_rpc_types ocaml_lsp_test_lib ocaml_lsp_server spawn unix yojson)
  (inline_tests
  (flags (-verbose))
   (deps %{exe:../../bin/main.exe}))

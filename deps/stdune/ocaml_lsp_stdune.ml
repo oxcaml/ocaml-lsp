@@ -230,6 +230,13 @@ module type Monoid = sig
 end
 
 module Monoid = struct
+  module Unit = struct
+    type t = unit
+
+    let empty = ()
+    let combine () () = ()
+  end
+
   module Appendable_list (M : sig
       type t
     end) : Monoid with type t = M.t Appendable_list.t = struct

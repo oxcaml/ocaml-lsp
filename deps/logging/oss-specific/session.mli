@@ -3,8 +3,7 @@ type t = { info : Session_info.t } [@@deriving sexp_of]
 
 val init
   :  deployment_stage:Stage.t
-  -> editor:string
-  -> editor_version:string
+  -> client_info:Lsp.Types.Client_info.t option
   -> worker_name:string option
   -> t Async.Deferred.t
 

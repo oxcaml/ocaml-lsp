@@ -44,7 +44,7 @@ module Import = struct
 end
 
 open Import
-module Fiber_async = Ocaml_lsp_fiber_shims.Fiber_async
+module Fiber_async = Ocaml_lsp_fiber.Fiber_async
 
 module T : sig
   val run_with_status

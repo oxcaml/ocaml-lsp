@@ -168,19 +168,18 @@ let log_msg server ~type_ ~message =
     Server.notification server (Server_notification.LogMessage log))
 ;;
 
-(* extracts editor name and version *)
-let get_editor (t : t) =
+let client_info (t : t) =
   match t.init with
-  | Uninitialized -> "unknown (uninitialized)", "unknown"
-  | Initialized s ->
-    (match s.params.clientInfo with
-     | None -> "unknown (no clientInfo)", "unknown"
-     | Some i -> InitializeParams.get_editor i)
+  | Uninitialized -> None
+  | Initialized s -> s.params.clientInfo
 ;;
 
 let editor_is_vscode (t : t) =
-  let editor_name, _ = get_editor t in
-  String.is_prefix (String.lowercase editor_name) ~prefix:"vscode"
+  match client_info t with
+  | None -> false
+  | Some client_info ->
+    let editor_name = Client_info.get_editor_name client_info in
+    String.is_prefix (String.lowercase editor_name) ~prefix:"vscode"
 ;;
 
 let should_fall_back (t : t) =

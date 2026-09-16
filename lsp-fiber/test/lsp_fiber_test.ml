@@ -4,7 +4,7 @@ open Fiber.O
 open Lsp
 open Lsp.Types
 open Lsp_fiber
-module Fiber_async = Ocaml_lsp_fiber_shims.Fiber_async
+module Fiber_async = Ocaml_lsp_fiber.Fiber_async
 
 module Test = struct
   module Client = struct
@@ -117,7 +117,7 @@ module End_to_end_client = struct
         json_pp
         res_reply;
       Format.eprintf "client: sending request to shutdown@.%!";
-      let* () = Ocaml_lsp_fiber_shims.close_fiber_pool detached in
+      let* () = Fiber.Pool.close detached in
       Client.notification client Exit
     in
     Fiber.fork_and_join_unit init (fun () ->
@@ -165,7 +165,7 @@ module End_to_end_server = struct
               Server.notification self (Server_notification.ShowMessage msg))
           | _ -> Fiber.return ()
         in
-        let* () = Ocaml_lsp_fiber_shims.close_fiber_pool detached in
+        let* () = Fiber.Pool.close detached in
         let result = `String "successful execution" in
         let* cancel = Rpc.Server.cancel_token () in
         (match command with

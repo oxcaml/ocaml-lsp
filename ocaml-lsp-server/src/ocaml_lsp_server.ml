@@ -1,5 +1,4 @@
 open Import
-module Fiber_extensions = Ocaml_lsp_fiber_shims
 module Config_data = Config_data
 module Version = Version
 module Diagnostics = Diagnostics
@@ -235,12 +234,11 @@ let init_logging state =
   if Core.am_running_test
   then return ()
   else (
-    let editor, editor_version = State.get_editor state in
+    let client_info = State.client_info state in
     let%bind.Deferred logging_session =
       Ocaml_lsp_logging.init
         ~deployment_stage:(State.stage state)
-        ~editor
-        ~editor_version
+        ~client_info
         ~worker_name:state.worker_name
     in
     state.logging_session <- Some logging_session;
@@ -322,9 +320,10 @@ let iterate_over_dune_updates dune sub ~f =
 ;;
 
 let on_initialize server (ip : InitializeParams.t) =
-  let client_name, _ =
-    Option.map ip.clientInfo ~f:InitializeParams.get_editor
-    |> Option.value ~default:("", "")
+  let client_name =
+    match ip.clientInfo with
+    | None -> Client_info.default_editor_name
+    | Some client_info -> Client_info.get_editor_name client_info
   in
   let state : State.t = Server.state server in
   let workspaces = Workspaces.create ip in
@@ -496,6 +495,8 @@ end
 
 let text_document_lens
   ~log_info
+  ~outline_lens_enabled
+  ~deoxidize_lens_enabled
   (state : State.t)
   { CodeLensParams.textDocument = { uri }; _ }
   =
@@ -503,29 +504,39 @@ let text_document_lens
   let doc = Document_store.get store uri in
   match Document.kind doc with
   | `Other -> Fiber.return (Some [])
-  | `Merlin m when Document.Merlin.kind m = Intf -> Fiber.return (Some [])
   | `Merlin merlin_doc ->
-    let+ outline =
-      Document.Merlin.dispatch_exn
-        ~log_info
-        ~priority:Priorities.code_lens
-        merlin_doc
-        (Outline { include_types = true })
+    let* deoxidize_lenses =
+      match deoxidize_lens_enabled with
+      | false -> Fiber.return []
+      | true -> Deoxidize_lens.for_document ~log_info merlin_doc
     in
-    let rec symbol_info_of_outline_item (item : Query_protocol.item) =
-      let children = List.concat_map item.children ~f:symbol_info_of_outline_item in
-      match item.outline_type with
-      | None -> children
-      | Some typ ->
-        let loc = item.location in
-        let info =
-          let range = Range.of_loc loc in
-          let command = Command.create ~title:typ ~command:"" () in
-          CodeLens.create ~range ~command ()
+    let+ outline_lenses =
+      match outline_lens_enabled && Document.Merlin.kind merlin_doc = Impl with
+      | false -> Fiber.return []
+      | true ->
+        let+ outline =
+          Document.Merlin.dispatch_exn
+            ~log_info
+            ~priority:Priorities.code_lens
+            merlin_doc
+            (Outline { include_types = true })
         in
-        info :: children
+        let rec symbol_info_of_outline_item (item : Query_protocol.item) =
+          let children = List.concat_map item.children ~f:symbol_info_of_outline_item in
+          match item.outline_type with
+          | None -> children
+          | Some typ ->
+            let loc = item.location in
+            let info =
+              let range = Range.of_loc loc in
+              let command = Command.create ~title:typ ~command:"" () in
+              CodeLens.create ~range ~command ()
+            in
+            info :: children
+        in
+        List.concat_map ~f:symbol_info_of_outline_item outline
     in
-    Some (List.concat_map ~f:symbol_info_of_outline_item outline)
+    Some (deoxidize_lenses @ outline_lenses)
 ;;
 
 let selection_range
@@ -815,16 +826,11 @@ let on_request
                (Document.Merlin.doc_comment ~log_info ~priority:Priorities.completion)
                ~markdown))
       ()
-  | CodeAction params ->
-    Ocaml_lsp_logging.with_fiber_logging
-      ~f:(fun () -> Code_actions.compute ~log_info server params)
-      log_info
+  | CodeAction params -> Code_actions.compute ~log_info server params
   | InlayHint params ->
     later (fun state () -> Inlay_hints.compute ~log_info state params) ()
   | TextDocumentColor (request : Lsp.Types.DocumentColorParams.t) ->
-    Ocaml_lsp_logging.with_fiber_logging
-      ~f:(fun () -> Color.compute ~log_info server request)
-      log_info
+    Color.compute ~log_info server request
   | TextDocumentColorPresentation _ -> now []
   | TextDocumentHover req ->
     later (fun (_ : State.t) () -> Hover_req.handle ~log_info rpc req) ()
@@ -832,9 +838,16 @@ let on_request
     later (fun (_ : State.t) () -> References_req.handle ~log_info rpc req) ()
   | TextDocumentCodeLensResolve codeLens -> now codeLens
   | TextDocumentCodeLens req ->
-    (match state.configuration.data.codelens with
-     | Some { enable = true } -> later (text_document_lens ~log_info) req
-     | _ -> now (Some []))
+    let outline_lens_enabled = Config_data.is_codelens_enabled state.configuration.data in
+    let deoxidize_lens_enabled =
+      Config_data.is_deoxidize_lens_enabled state.configuration.data
+    in
+    (match outline_lens_enabled || deoxidize_lens_enabled with
+     | true ->
+       later
+         (text_document_lens ~log_info ~outline_lens_enabled ~deoxidize_lens_enabled)
+         req
+     | false -> now (Some []))
   | TextDocumentHighlight req -> later (highlight ~log_info) req
   | DocumentSymbol { textDocument = { uri }; _ } -> later (document_symbol ~log_info) uri
   | TextDocumentDeclaration { textDocument = { uri }; position } ->
@@ -1017,11 +1030,9 @@ let on_notification
       state, None
     | CancelRequest _ -> Fiber.return (state, None)
     | ChangeConfiguration req ->
-      let prev_which_diagnostics = state.configuration.data.which_diagnostics in
+      let prev_which_diagnostics = Configuration.which_diagnostics state.configuration in
       let prev_shorten_merlin =
-        match state.configuration.data.shorten_merlin_diagnostics with
-        | None -> false
-        | Some { enable } -> enable
+        Configuration.shorten_merlin_diagnostics state.configuration
       in
       let* configuration = Configuration.update state.configuration req in
       let which_diagnostics = Configuration.which_diagnostics configuration in
@@ -1030,11 +1041,7 @@ let on_notification
       in
       let shorten_merlin_changed = prev_shorten_merlin <> shorten_merlin_diagnostics in
       let which_diagnostics_changed =
-        match prev_which_diagnostics, configuration.data.which_diagnostics with
-        | None, None -> false
-        | Some which1, Some which2 ->
-          not (Config_data.WhichDiagnostics.equal which1 which2)
-        | None, Some _ | Some _, None -> true
+        not (Config_data.WhichDiagnostics.equal prev_which_diagnostics which_diagnostics)
       in
       let () =
         Diagnostics.set_which_diagnostics ~which_diagnostics (State.diagnostics state)
@@ -1154,9 +1161,12 @@ let start stream ~stage ~worker_name =
   server_ref := Some server;
   let with_log_errors what f =
     let+ (_ : (unit, unit) result) =
-      Fiber_extensions.map_reduce_errors_first f ~on_error:(fun exn ->
-        Format.eprintf "%s: %a@." what Exn_with_backtrace.pp_uncaught exn;
-        Fiber.return ())
+      Fiber.map_reduce_errors
+        (module Ocaml_lsp_stdune.Monoid.Unit)
+        ~on_error:(fun exn ->
+          Format.eprintf "%s: %a@." what Exn_with_backtrace.pp_uncaught exn;
+          Fiber.return ())
+        f
     in
     ()
   in
@@ -1206,7 +1216,7 @@ let start stream ~stage ~worker_name =
          in
          let finalize =
            [ Document_store.close_all store
-           ; Ocaml_lsp_fiber_shims.close_fiber_pool detached
+           ; Fiber.Pool.close detached
            ; Ocamlformat_rpc.stop ocamlformat_rpc
            ; Lev_fiber.Timer.Wheel.stop wheel
            ; Merlin_config.DB.stop state.merlin_config

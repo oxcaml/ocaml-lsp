@@ -59,9 +59,12 @@ val bind : 'a t -> f:('a -> 'b t) -> 'b t
 
 val both : 'a t -> 'b t -> ('a * 'b) t
 
-(* Jane Street: [ppx_let] support. Added because this vendored copy replaces the opam
-   [fiber] package, which provided [Let_syntax]. *)
 module Let_syntax : sig
+  val return : 'a -> 'a t
+  val bind : 'a t -> f:('a -> 'b t) -> 'b t
+  val map : 'a t -> f:('a -> 'b) -> 'b t
+  val both : 'a t -> 'b t -> ('a * 'b) t
+
   module Let_syntax : sig
     val return : 'a -> 'a t
     val bind : 'a t -> f:('a -> 'b t) -> 'b t
@@ -414,6 +417,21 @@ module Scheduler : sig
   (** Advance a stalled fiber as much as possible by filling a list of ivars. Once must
       call [advance] on a given [stalled] value only once. *)
   val advance : 'a stalled -> fill list -> 'a step
+end
+
+(** Interoperation between fibers and Async. This library assumes that the outer program
+    is running with Async and that the fibers will be interpreted by [deferred_of_fiber].
+
+    The most important difference between fibers and deferreds is that fibers are just
+    continuations and do not store the value they compute, so if you bind twice on a given
+    fiber the computation will be run twice. A [Fiber.Ivar.t] can be used to save the
+    result of a computation. *)
+module Fiber_async : sig
+  (** Convert a fiber to a computation that returns a deferred when run. *)
+  val deferred_of_fiber : 'a t -> unit -> 'a Async.Deferred.t
+
+  (** Convert a deferred to a fiber that stores the result in an [Ivar.t]. *)
+  val fiber_of_deferred : 'a Async.Deferred.t -> 'a t
 end
 
 (** {1 Fiber cancellation} *)

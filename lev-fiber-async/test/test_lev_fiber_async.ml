@@ -1,7 +1,8 @@
 open Core
 open Async
 open Lev_fiber_async
-open Ocaml_lsp_fiber_shims.Fiber_async
+module Fiber = Ocaml_lsp_fiber
+open Fiber.Fiber_async
 module Thread_safe_ivar = Ocaml_lsp_thread_safe_ivar
 
 let%expect_test "Timer.sleepf" =

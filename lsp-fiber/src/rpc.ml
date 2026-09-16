@@ -17,7 +17,7 @@ module Reply = struct
   let later f = Later f
 end
 
-let cancel_token = Ocaml_lsp_fiber_shims.Var_optional.create_none ()
+let cancel_token = Fiber.Var.create ()
 
 module State = struct
   type t =
@@ -207,13 +207,13 @@ struct
         let cancel = Fiber.Cancel.create () in
         let remove = lazy (Table.remove t.pending req.id) in
         let+ response, state =
-          Ocaml_lsp_fiber_shims.with_error_handler
+          Fiber.with_error_handler
             ~on_error:(fun exn ->
               Ocaml_lsp_stdune.Exn_with_backtrace.map_and_reraise exn ~f:(fun exn ->
                 Lazy.force remove;
                 exn))
             (fun () ->
-              Ocaml_lsp_fiber_shims.Var_optional.set cancel_token (Some cancel) (fun () ->
+              Fiber.Var.set cancel_token cancel (fun () ->
                 Table.replace t.pending req.id cancel;
                 h_on_request.on_request t r ~request_time ~event_index))
         in
@@ -229,10 +229,8 @@ struct
             let f send =
               Fiber.finalize
                 (fun () ->
-                  Ocaml_lsp_fiber_shims.Var_optional.set
-                    cancel_token
-                    (Some cancel)
-                    (fun () -> k (fun r -> send (to_response r))))
+                  Fiber.Var.set cancel_token cancel (fun () ->
+                    k (fun r -> send (to_response r))))
                 ~finally:(fun () ->
                   Lazy.force remove;
                   Fiber.return ())
@@ -372,7 +370,7 @@ struct
     Fiber.fork_and_join_unit
       (fun () ->
         let* () = Session.run (Fdecl.get ~here:[%here] t.session) in
-        Ocaml_lsp_fiber_shims.close_fiber_pool t.detached)
+        Fiber.Pool.close t.detached)
       (fun () -> Fiber.Pool.run t.detached)
   ;;
 
@@ -385,7 +383,7 @@ struct
     Jsonrpc_fiber.Notify.Continue None, state t
   ;;
 
-  let cancel_token () = Ocaml_lsp_fiber_shims.Var_optional.get cancel_token
+  let cancel_token () = Fiber.Var.get cancel_token
 end
 
 module Client = struct

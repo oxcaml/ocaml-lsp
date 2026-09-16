@@ -496,8 +496,8 @@ let handle_using_merlin
     in
     let markdown = client_supports_markdown state in
     let* syntax_doc =
-      match state.configuration.data.syntax_documentation with
-      | Some { enable = true } ->
+      match Config_data.is_syntax_documentation_enabled state.configuration.data with
+      | true ->
         let* syntax_doc =
           Document.Merlin.with_pipeline_exn
             ~log_info
@@ -523,7 +523,7 @@ let handle_using_merlin
               manual_sentence)
         in
         Fiber.return syntax_doc
-      | Some _ | None -> Fiber.return None
+      | false -> Fiber.return None
     in
     (match hover_at_cursor parsetree position with
      | None ->
@@ -619,9 +619,9 @@ let handle_internal
 let handle ~log_info server params =
   let mode =
     let { State.configuration; _ } = Server.state server in
-    match configuration.data.extended_hover with
-    | Some { enable = true } -> Extended_variable
-    | Some _ | None -> environment_mode
+    match Config_data.is_extended_hover_enabled configuration.data with
+    | true -> Extended_variable
+    | false -> environment_mode
   in
   let+ hover = handle_internal ~log_info server params mode in
   Option.map hover ~f:snd

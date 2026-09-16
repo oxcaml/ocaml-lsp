@@ -193,12 +193,16 @@ let fold_over_parsetree (parsetree : Mreader.parsetree) =
       | Pexp_for _
       | Pexp_object _
       | Pexp_pack _
-      | Pexp_letmodule _
       | Pexp_quote _ ->
         Range.of_loc expr.pexp_loc |> push;
         Ast_iterator.default_iterator.expr self expr
       | Pexp_extension _
       | Pexp_let _
+      (* [Pexp_letmodule]'s location spans the body the module is in scope for, not just
+         the module definition, so folding on it would swallow the rest of the enclosing
+         expression. The [module_expr] case pushes the [struct ... end] range, which is
+         what one actually wants to fold. Same reasoning as [Pexp_let] and [Pexp_open]. *)
+      | Pexp_letmodule _
       | Pexp_open _
       | Pexp_poly _
       | Pexp_sequence _

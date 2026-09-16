@@ -54,10 +54,20 @@ module Dune_rpc = struct
           }
       end
 
+      module Glob = struct
+        type t =
+          { dir : string
+          ; glob : string
+          ; promote : bool
+          ; recursive : bool
+          }
+      end
+
       type t =
         | Path of Path.t
         | Directory of Path.t
         | Alias of Alias.t
+        | Glob of Glob.t
         | Command_line of string
     end
 

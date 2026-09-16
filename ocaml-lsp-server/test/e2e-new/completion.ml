@@ -159,7 +159,7 @@ let%expect_test "Fuzzy completion enabled (VSCode behavior)" =
       "detail": "",
       "kind": 9,
       "label": "List",
-      "sortText": "0258",
+      "sortText": "0259",
       "textEdit": {
         "newText": "List",
         "range": {
@@ -172,7 +172,7 @@ let%expect_test "Fuzzy completion enabled (VSCode behavior)" =
       "detail": "type ('a : value_or_null) list = [] | (::) of 'a * 'a list",
       "kind": 25,
       "label": "list",
-      "sortText": "0348",
+      "sortText": "0351",
       "textEdit": {
         "newText": "list",
         "range": {
@@ -198,7 +198,7 @@ let%expect_test "Fuzzy completion enabled (VSCode behavior)" =
       "detail": "type ('a : value_or_null) list = [] | (::) of 'a * 'a list",
       "kind": 25,
       "label": "list",
-      "sortText": "0276",
+      "sortText": "0278",
       "textEdit": {
         "newText": "list",
         "range": {
@@ -211,7 +211,7 @@ let%expect_test "Fuzzy completion enabled (VSCode behavior)" =
       "detail": "",
       "kind": 9,
       "label": "List",
-      "sortText": "0321",
+      "sortText": "0330",
       "textEdit": {
         "newText": "List",
         "range": {

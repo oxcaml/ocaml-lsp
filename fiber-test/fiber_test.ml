@@ -13,13 +13,13 @@ module Scheduler : sig
 end = struct
   type t = unit Fiber.Ivar.t Base.Queue.t
 
-  let t_var = Ocaml_lsp_fiber_shims.Var_optional.create_none ()
+  let t_var = Fiber.Var.create ()
   let create () = Base.Queue.create ()
 
   exception Never
 
   let run t fiber =
-    let fiber = Ocaml_lsp_fiber_shims.Var_optional.set t_var (Some t) (fun () -> fiber) in
+    let fiber = Fiber.Var.set t_var t (fun () -> fiber) in
     Fiber.run fiber ~iter:(fun () ->
       let next =
         match Base.Queue.dequeue t with
@@ -37,7 +37,7 @@ let test ?(expect_never = false) sexp_of_result f =
       Format.eprintf "%a@." Exn_with_backtrace.pp_uncaught exn;
       Exn_with_backtrace.reraise exn
     in
-    Ocaml_lsp_fiber_shims.with_error_handler f ~on_error
+    Fiber.with_error_handler f ~on_error
   in
   (try Scheduler.run (Scheduler.create ()) f |> sexp_of_result |> print_sexp with
    | Scheduler.Never -> never_raised := true);

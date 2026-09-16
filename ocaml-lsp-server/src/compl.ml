@@ -179,10 +179,10 @@ module Complete_by_prefix = struct
     let user_typed_double_underscore =
       String.substr_index suffix ~pattern:"__" |> Option.is_some
     in
-    match state.configuration.data.filter_double_underscore with
-    | Some { enable } when enable && not user_typed_double_underscore ->
-      filter_ppx_template_items completion_items
-    | None | Some _ -> completion_items
+    if Config_data.is_filter_double_underscore_enabled state.configuration.data
+       && not user_typed_double_underscore
+    then filter_ppx_template_items completion_items
+    else completion_items
   ;;
 
   let process_dispatch_resp_squash
@@ -391,9 +391,9 @@ let complete
            let short_path =
              (* send text before "." as prefix to merlin, to enable fuzzy search after
                 ".". E.g. `List.mp` should match `List.map`. *)
-             match state.configuration.data.fuzzy_completion with
-             | None | Some { enable = false } -> `None
-             | Some { enable = true } -> `Prefix
+             match Config_data.is_fuzzy_completion_enabled state.configuration.data with
+             | false -> `None
+             | true -> `Prefix
            in
            let prefix = prefix_of_position ~short_path (Document.source doc) position in
            let suffix =

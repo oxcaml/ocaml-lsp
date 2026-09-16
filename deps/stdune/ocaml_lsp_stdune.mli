@@ -109,6 +109,8 @@ module type Monoid = sig
 end
 
 module Monoid : sig
+  module Unit : Monoid with type t = unit
+
   module Appendable_list (M : sig
       type t
     end) : Monoid with type t = M.t Appendable_list.t

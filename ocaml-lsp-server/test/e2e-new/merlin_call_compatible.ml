@@ -20,7 +20,7 @@ let call_merlin_compatible client command args result_as_sexp =
 ;;
 
 let normalize_merlin_analysis_module_name response =
-  (* Internal and OSS Dune print exceptions from wrapped modules using different paths. *)
+  (* Internal and Dune print exceptions from wrapped modules using different paths. *)
   response
   |> Yojson.Safe.to_string
   |> String.substr_replace_all

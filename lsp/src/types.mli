@@ -3775,18 +3775,36 @@ module InitializeError : sig
   include Json.Jsonable.S with type t := t
 end
 
-module InitializeParams : sig
-  type clientInfo =
+module Client_info : sig
+  (** Information about the client sent in the "initialize" request. *)
+  type t =
     { name : string
     ; version : string option
+    ; ai_model_name : string option
+    (** The name of the model in cases when the editor is an AI integration which might
+        run multiple models. *)
     }
 
-  val create_clientInfo : name:string -> ?version:string -> unit -> clientInfo
-  val get_editor : clientInfo -> string * string
+  val create : name:string -> ?version:string -> ?ai_model_name:string -> unit -> t
+  val default_editor_name : string
+  val default_editor_version : string
 
+  (** First whitespace-separated token of [name]. *)
+  val get_editor_name : t -> string
+
+  (** [version], or [default_editor_version] if not provided. *)
+  val get_editor_version : t -> string
+
+  (** [ai_model_name], if provided. *)
+  val get_ai_model_name : t -> string option
+
+  include Json.Jsonable.S with type t := t
+end
+
+module InitializeParams : sig
   type t =
     { capabilities : ClientCapabilities.t
-    ; clientInfo : clientInfo option
+    ; clientInfo : Client_info.t option
     ; initializationOptions : Json.t option
     ; locale : string option
     ; processId : int option
@@ -3799,7 +3817,7 @@ module InitializeParams : sig
 
   val create
     :  capabilities:ClientCapabilities.t
-    -> ?clientInfo:clientInfo
+    -> ?clientInfo:Client_info.t
     -> ?initializationOptions:Json.t
     -> ?locale:string
     -> ?processId:int
@@ -4432,16 +4450,9 @@ module InitializeResult : sig
 end
 
 module InitializedParams_ : sig
-  type clientInfo =
-    { name : string
-    ; version : string option
-    }
-
-  val create_clientInfo : name:string -> ?version:string -> unit -> clientInfo
-
   type t =
     { capabilities : ClientCapabilities.t
-    ; clientInfo : clientInfo option
+    ; clientInfo : Client_info.t option
     ; initializationOptions : Json.t option
     ; locale : string option
     ; processId : int option
@@ -4453,7 +4464,7 @@ module InitializedParams_ : sig
 
   val create
     :  capabilities:ClientCapabilities.t
-    -> ?clientInfo:clientInfo
+    -> ?clientInfo:Client_info.t
     -> ?initializationOptions:Json.t
     -> ?locale:string
     -> ?processId:int

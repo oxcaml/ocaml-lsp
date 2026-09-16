@@ -11,7 +11,7 @@ open struct
   module DiagnosticSeverity = DiagnosticSeverity
   module Drpc = Drpc
   module Dune_rpc_async = Drpc.Async
-  module Fiber_async = Ocaml_lsp_fiber_shims.Fiber_async
+  module Fiber_async = Ocaml_lsp_fiber.Fiber_async
   module File_path = File_path
   module Loc = Loc
   module Location = Location

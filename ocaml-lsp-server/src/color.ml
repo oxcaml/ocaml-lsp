@@ -13,30 +13,35 @@ let compute_colors ~log_info document : Lsp.Types.ColorInformation.t list Fiber.
 
 let compute ~log_info server (params : Lsp.Types.DocumentColorParams.t) =
   let state : State.t = Server.state server in
-  let feature_enabled =
-    Option.map state.configuration.data.ppx_css_colors ~f:(fun c -> c.enable)
+  let feature_enabled = Config_data.is_ppx_css_colors_enabled state.configuration.data in
+  let empty () =
+    Fiber.return
+      (Ocaml_lsp_logging.with_logging ~f:(fun () -> Reply.now []) log_info, state)
   in
-  let empty = Reply.now [], state in
   match feature_enabled with
-  | None | Some false -> Fiber.return empty
-  | Some true ->
+  | false -> empty ()
+  | true ->
     let uri = params.textDocument.uri in
     let doc : Document.t option =
       let store = state.store in
       Document_store.get_opt store uri
     in
     (match doc with
-     | None -> Fiber.return empty
+     | None -> empty ()
      | Some doc ->
        (match Document.syntax doc with
-        | Reason | Ocamllex | Menhir | Cram | Dune -> Fiber.return empty
+        | Reason | Ocamllex | Menhir | Cram | Dune -> empty ()
         | Ocaml ->
           (match Document.kind doc with
-           | `Other -> Fiber.return empty
+           | `Other -> empty ()
            | `Merlin doc ->
              Fiber.return
                ( Reply.later (fun send ->
-                   let* colors = compute_colors ~log_info doc in
+                   let* colors =
+                     Ocaml_lsp_logging.with_fiber_logging
+                       ~f:(fun () -> compute_colors ~log_info doc)
+                       log_info
+                   in
                    send colors)
                , state ))))
 ;;

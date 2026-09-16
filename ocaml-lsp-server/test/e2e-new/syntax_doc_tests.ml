@@ -90,7 +90,7 @@ let foo (type a : float64) (x : a) = 42
     {
       "contents": {
         "kind": "markdown",
-        "value": "```ocaml\nfloat64 mod external_\n```\n***\n`syntax` Kind abbreviation: The layout of types represented by a 64-bit machine float. See [Manual](https://oxcaml.org/documentation/unboxed-types/intro/)"
+        "value": "```ocaml\nfloat64 mod external_\n```\n***\n`syntax` Kind abbreviation: The layout of types represented by a 64-bit machine float. See [Manual](https://beta.oxcaml.org/documentation/unboxed-types/intro/)"
       },
       "range": {
         "start": { "line": 1, "character": 18 },
@@ -120,7 +120,7 @@ type t : immutable_data
     {
       "contents": {
         "kind": "markdown",
-        "value": "```ocaml\nvalue non_float mod forkable unyielding many stateless immutable\n```\n***\n`syntax` Kind abbreviation: The kind of types that contain no mutable parts and no functions. See [Manual](https://oxcaml.org/documentation/kinds/syntax/)"
+        "value": "```ocaml\nvalue non_float mod forkable unyielding many stateless immutable\n```\n***\n`syntax` Kind abbreviation: The kind of types that contain no mutable parts and no functions. See [Manual](https://beta.oxcaml.org/documentation/kinds/syntax/)"
       },
       "range": {
         "start": { "line": 1, "character": 9 },
@@ -152,7 +152,7 @@ type t : value mod portable
     {
       "contents": {
         "kind": "markdown",
-        "value": "`syntax` Mod-bound: Values of types of this kind can cross to `portable` from weaker modes. See [Manual](https://oxcaml.org/documentation/kinds/intro/)"
+        "value": "`syntax` Mod-bound: Values of types of this kind can cross to `portable` from weaker modes. See [Manual](https://beta.oxcaml.org/documentation/kinds/intro/)"
       },
       "range": {
         "start": { "line": 1, "character": 24 },

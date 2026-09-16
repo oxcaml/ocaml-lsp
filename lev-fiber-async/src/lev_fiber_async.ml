@@ -1,6 +1,6 @@
 open Core
 open Async
-open Ocaml_lsp_fiber_shims.Fiber_async
+open Ocaml_lsp_fiber.Fiber_async
 open Lev_fiber_async_intf
 
 let default_backtrace =

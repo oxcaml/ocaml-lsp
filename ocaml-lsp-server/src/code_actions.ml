@@ -1,6 +1,5 @@
 open Import
 open Fiber.O
-module Fiber_extensions = Ocaml_lsp_fiber_shims
 
 let priority = Priorities.code_action
 
@@ -73,7 +72,7 @@ let compute_ocaml_code_actions ~log_info (params : CodeActionParams.t) state doc
   in
   let code_action ca =
     let+ res =
-      Fiber_extensions.map_reduce_errors_with_monoid
+      Fiber.map_reduce_errors
         (module Code_action_error)
         ~on_error:(fun exn ->
           match exn.exn with
@@ -108,11 +107,15 @@ let compute ~log_info server (params : CodeActionParams.t) =
     | [] -> None
     | xs -> Some (List.map ~f:(fun a -> `CodeAction a) xs)
   in
+  let reply_now res =
+    Fiber.return
+      (Ocaml_lsp_logging.with_logging ~f:(fun () -> Reply.now res) log_info, state)
+  in
   match doc with
-  | None -> Fiber.return (Reply.now None, state)
+  | None -> reply_now None
   | Some doc ->
     (match Document.syntax doc with
-     | Ocamllex | Menhir | Cram | Dune -> Fiber.return (Reply.now None, state)
+     | Ocamllex | Menhir | Cram | Dune -> reply_now None
      | Ocaml | Reason ->
        let reply () =
          let+ code_action_results =
@@ -123,7 +126,7 @@ let compute ~log_info server (params : CodeActionParams.t) =
        let later f =
          Fiber.return
            ( Reply.later (fun k ->
-               let* resp = f () in
+               let* resp = Ocaml_lsp_logging.with_fiber_logging ~f log_info in
                k resp)
            , state )
        in

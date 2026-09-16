@@ -5906,33 +5906,45 @@ module InitializeError = struct
   let create ~(retry : bool) : t = { retry }
 end
 
-module InitializeParams = struct
-  type clientInfo =
+module Client_info = struct
+  type t =
     { name : string
     ; version : string Json.Nullable_option.t [@default None] [@yojson_drop_default ( = )]
+    ; ai_model_name : string Json.Nullable_option.t
+         [@key "aiModelName"] [@default None] [@yojson_drop_default ( = )]
     }
   [@@deriving yojson] [@@yojson.allow_extra_fields]
 
-  let create_clientInfo ~(name : string) ?(version : string option) (() : unit)
-    : clientInfo
+  let create
+    ~(name : string)
+    ?(version : string option)
+    ?(ai_model_name : string option)
+    (() : unit)
+    : t
     =
-    { name; version }
+    { name; version; ai_model_name }
   ;;
 
-  let get_editor { name; version } =
-    let editor =
-      match Base.String.split ~on:' ' name with
-      | [] -> ""
-      | first_tok :: _ -> first_tok
-    in
-    match version with
-    | None -> editor, "unknown"
-    | Some v -> editor, v
+  let default_editor_name = "unknown (no clientInfo)"
+  let default_editor_version = "unknown"
+
+  let get_editor_name { name; _ } =
+    match Base.String.split ~on:' ' name with
+    | [] -> ""
+    | first_tok :: _ -> first_tok
   ;;
 
+  let get_editor_version { version; _ } =
+    Option.value version ~default:default_editor_version
+  ;;
+
+  let get_ai_model_name { ai_model_name; _ } = ai_model_name
+end
+
+module InitializeParams = struct
   type t =
     { capabilities : ClientCapabilities.t
-    ; clientInfo : clientInfo Json.Nullable_option.t
+    ; clientInfo : Client_info.t Json.Nullable_option.t
          [@default None] [@yojson_drop_default ( = )]
     ; initializationOptions : Json.t option [@yojson.option]
     ; locale : string Json.Nullable_option.t [@default None] [@yojson_drop_default ( = )]
@@ -5953,7 +5965,7 @@ module InitializeParams = struct
 
   let create
     ~(capabilities : ClientCapabilities.t)
-    ?(clientInfo : clientInfo option)
+    ?(clientInfo : Client_info.t option)
     ?(initializationOptions : Json.t option)
     ?(locale : string option)
     ?(processId : int option)
@@ -7467,21 +7479,9 @@ module InitializeResult = struct
 end
 
 module InitializedParams_ = struct
-  type clientInfo =
-    { name : string
-    ; version : string Json.Nullable_option.t [@default None] [@yojson_drop_default ( = )]
-    }
-  [@@deriving yojson] [@@yojson.allow_extra_fields]
-
-  let create_clientInfo ~(name : string) ?(version : string option) (() : unit)
-    : clientInfo
-    =
-    { name; version }
-  ;;
-
   type t =
     { capabilities : ClientCapabilities.t
-    ; clientInfo : clientInfo Json.Nullable_option.t
+    ; clientInfo : Client_info.t Json.Nullable_option.t
          [@default None] [@yojson_drop_default ( = )]
     ; initializationOptions : Json.t option [@yojson.option]
     ; locale : string Json.Nullable_option.t [@default None] [@yojson_drop_default ( = )]
@@ -7499,7 +7499,7 @@ module InitializedParams_ = struct
 
   let create
     ~(capabilities : ClientCapabilities.t)
-    ?(clientInfo : clientInfo option)
+    ?(clientInfo : Client_info.t option)
     ?(initializationOptions : Json.t option)
     ?(locale : string option)
     ?(processId : int option)

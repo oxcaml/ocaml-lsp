@@ -23,6 +23,15 @@ interface config {
   codelens: { enable : boolean }
 
   /**
+  * Enable/Disable the "deoxidize" CodeLens, which shows signature declarations
+  * with all kinds, modes, and ppx_template annotations stripped off. Separate
+  * from `codelens`, which shows inferred types of toplevel items in
+  * implementations.
+  * @default false
+  */
+  deoxidizeLens: { enable : boolean }
+
+  /**
   * Enable/Disable Dune diagnostics
   * @default true
   * @since 1.18

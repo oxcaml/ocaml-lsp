@@ -164,7 +164,9 @@ let is_arrow t =
 let application_signature ~prefix = function
   (* provide signature information for applied functions *)
   | (_, Browse_raw.Expression arg)
-    :: (_, Expression { exp_desc = Texp_apply (({ exp_type; _ } as e), args, _, _, _); _ })
+    :: ( _
+       , Expression
+           { exp_desc = Texp_apply (({ exp_type; _ } as e), args, _, _, _, _); _ } )
     :: _
     when is_arrow exp_type ->
     let result = separate_function_signature e ~args in

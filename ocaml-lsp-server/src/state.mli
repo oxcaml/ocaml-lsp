@@ -91,8 +91,8 @@ val diagnostics : t -> Diagnostics.t
 val dune_subscriptions : t -> Dune_subscriptions.t option
 val log_msg : t Server.t -> type_:MessageType.t -> message:string -> unit Fiber.t
 
-(** @return (name,version) of the editor that initialized this LSP instance. *)
-val get_editor : t -> string * string
+(** @return the [clientInfo] sent by the client that initialized this LSP instance. *)
+val client_info : t -> Client_info.t option
 
 val editor_is_vscode : t -> bool
 

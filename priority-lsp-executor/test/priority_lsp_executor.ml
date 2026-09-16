@@ -3,7 +3,7 @@ open! Core
 open! Async
 open Fiber.O
 open Priority_lsp_executor_lib
-module Fiber_async = Ocaml_lsp_fiber_shims.Fiber_async
+module Fiber_async = Ocaml_lsp_fiber.Fiber_async
 
 let test f =
   let fiber = Fiber.of_thunk f in

@@ -1,9 +1,10 @@
 _build
-_build_oss
 *.install
 *.merlin
 _opam
-_oxcaml
+
+_build_oss/
+_oxcaml/
 deps/css-lsp/ocaml_lsp_css_lsp.ml
 deps/dune-integration/ocaml_lsp_dune_integration.ml
 deps/logging/ocaml_lsp_logging.ml

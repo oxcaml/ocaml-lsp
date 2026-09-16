@@ -131,7 +131,7 @@ end
 (* Misc modules *)
 module Drpc = Ocaml_lsp_dune_integration.Dune_rpc
 module Feature_id = Ocaml_lsp_remote_lsp.Feature_id
-module Fiber_async = Ocaml_lsp_fiber_shims.Fiber_async
+module Fiber_async = Ocaml_lsp_fiber.Fiber_async
 module File_path = File_path
 
 (* OCaml frontend *)
@@ -237,6 +237,7 @@ include struct
   module CallHierarchyOutgoingCallsParams = CallHierarchyOutgoingCallsParams
   module CallHierarchyOutgoingCall = CallHierarchyOutgoingCall
   module CallHierarchyPrepareParams = CallHierarchyPrepareParams
+  module Client_info = Client_info
   module CodeAction = CodeAction
   module CodeActionKind = CodeActionKind
   module CodeActionOptions = CodeActionOptions

@@ -31,7 +31,7 @@ let browse_of_cmt (cmt_infos : Cmt_format.cmt_infos) : Browse_raw.node option =
   | Implementation str -> Some (Structure str)
   | Interface sig_ -> Some (Signature sig_)
   (* TODO support these *)
-  | Packed _ | Partial_implementation _ | Partial_interface _ -> None
+  | Packed _ | Partial_implementation _ | Partial_interface _ | Functorize -> None
 ;;
 
 let is_directory dir =

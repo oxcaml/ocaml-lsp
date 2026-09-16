@@ -384,7 +384,7 @@ let inline_edits pipeline task =
   let expr_iter (iter : I.iterator) (expr : Typedtree.expression) =
     match expr.exp_desc with
     (* when inlining into an application context, attempt to beta reduce the result *)
-    | Texp_apply ({ exp_desc = Texp_ident { path = Pident id; _ }; _ }, args, _, _, _)
+    | Texp_apply ({ exp_desc = Texp_ident { path = Pident id; _ }; _ }, args, _, _, _, _)
       when Ident.same task.inlined_var id && not_shadowed expr.exp_env ->
       (match typedtree_application_args pipeline args with
        | None -> ()
@@ -396,7 +396,7 @@ let inline_edits pipeline task =
            @@ strip_merlin_attributes reduced_pexpr
          in
          insert_edit newText expr.exp_loc)
-    | Texp_apply (func, args, _, _, _) ->
+    | Texp_apply (func, args, _, _, _, _) ->
       iter.expr iter func;
       List.iter args ~f:(fun (l, e) ->
         let e =

@@ -18,9 +18,9 @@ let outline_type ~env typ =
 ;;
 
 let hint_binding_iter
-  ?(hint_let_bindings = false)
-  ?(hint_pattern_variables = false)
-  ?(hint_function_params = false)
+  ~hint_let_bindings
+  ~hint_pattern_variables
+  ~hint_function_params
   typedtree
   range
   k
@@ -247,20 +247,14 @@ let compute
   | `Merlin m when Document.Merlin.kind m = Intf -> Fiber.return None
   | `Merlin doc ->
     let+ hints =
-      let hint_let_bindings =
-        Option.map state.configuration.data.inlay_hints ~f:(fun c -> c.hint_let_bindings)
-      in
-      let hint_pattern_variables =
-        Option.map state.configuration.data.inlay_hints ~f:(fun c ->
-          c.hint_pattern_variables)
-      in
-      let hint_function_params =
-        Option.map state.configuration.data.inlay_hints ~f:(fun c ->
-          c.hint_function_params)
-      in
-      let hint_let_syntax_ppx =
-        Option.map state.configuration.data.inlay_hints ~f:(fun c ->
-          c.hint_let_syntax_ppx)
+      let { hint_let_bindings
+          ; hint_pattern_variables
+          ; hint_function_params
+          ; hint_let_syntax_ppx
+          }
+        : Config_data.InlayHints.t
+        =
+        Config_data.inlay_hints state.configuration.data
       in
       Document.Merlin.with_pipeline_exn ~log_info ~priority doc (fun pipeline ->
         let hints = ref [] in
@@ -268,9 +262,9 @@ let compute
          | `Interface _ -> ()
          | `Implementation typedtree ->
            hint_binding_iter
-             ?hint_let_bindings
-             ?hint_pattern_variables
-             ?hint_function_params
+             ~hint_let_bindings
+             ~hint_pattern_variables
+             ~hint_function_params
              typedtree
              range
              (fun env type_ loc ->
@@ -287,7 +281,7 @@ let compute
                     ()
                 in
                 Option.iter hint ~f:(fun hint -> hints := hint :: !hints));
-           if Option.value ~default:false hint_let_syntax_ppx
+           if hint_let_syntax_ppx
            then
              hint_let_syntax_ppx_iter
                (Mpipeline.typer_result pipeline)

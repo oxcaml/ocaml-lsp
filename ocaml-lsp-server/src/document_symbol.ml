@@ -311,9 +311,7 @@ let run ~log_info (state : State.t) doc uri =
   | `Other -> Fiber.return None
   | `Merlin _ ->
     let document_symbol_configuration =
-      Option.value
-        state.configuration.data.document_symbol
-        ~default:{ include_local_bindings = false }
+      Config_data.document_symbol state.configuration.data
     in
     let+ symbols =
       Document.Merlin.with_pipeline_exn

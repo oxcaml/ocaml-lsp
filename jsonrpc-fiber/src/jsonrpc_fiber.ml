@@ -1,6 +1,5 @@
 open Import
 open Fiber.O
-module Fiber_extensions = Ocaml_lsp_fiber_shims
 
 module Id = struct
   include Id
@@ -221,7 +220,8 @@ struct
       log t (fun () -> Log.msg "handling request" []);
       let* result =
         let sent = ref false in
-        Fiber_extensions.map_reduce_errors_first
+        Fiber.map_reduce_errors
+          (module Ocaml_lsp_stdune.Monoid.Unit)
           ~on_error:(fun exn_bt ->
             if !sent
             then (* TODO log *)
@@ -241,8 +241,8 @@ struct
         let* () =
           Fiber.Pool.task later ~f:(fun () ->
             let+ res =
-              Fiber_extensions.map_reduce_errors_first
-                (fun () -> Reply.send reply sender)
+              Fiber.map_reduce_errors
+                (module Ocaml_lsp_stdune.Monoid.Unit)
                 ~on_error:(fun exn_bt ->
                   if sender.called
                   then (* TODO we should log *)
@@ -250,6 +250,7 @@ struct
                   else (
                     let resp = response_of_exn r.id exn_bt in
                     Sender.send sender resp))
+                (fun () -> Reply.send reply sender)
             in
             match res with
             | Ok () -> ()
@@ -257,9 +258,7 @@ struct
         in
         loop ()
     and on_notification (r : Notification.t) : unit Fiber.t =
-      let* res =
-        Ocaml_lsp_fiber_shims.collect_errors (fun () -> t.on_notification (t, r))
-      in
+      let* res = Fiber.collect_errors (fun () -> t.on_notification (t, r)) in
       match res with
       | Ok (next, state) ->
         t.state <- state;
@@ -283,7 +282,7 @@ struct
         Fiber.fork_and_join_unit
           (fun () ->
             let* () = loop () in
-            Ocaml_lsp_fiber_shims.close_fiber_pool later)
+            Fiber.Pool.close later)
           (fun () -> Fiber.Pool.run later)
       in
       close t)
