@@ -45,7 +45,7 @@ let run ~log_info (state : State.t) { SignatureHelpParams.textDocument = { uri }
     Fiber.return help
   | `Merlin merlin ->
     let* application_signature =
-      let* inside_comment = Check_for_comments.position_in_comment ~log_info ~position ~merlin in
+      let* inside_comment = Check_for_comments.position_in_comment ~log_info ~position ~merlin ~priority in
       match inside_comment with
       | true -> Fiber.return None
       | false ->
