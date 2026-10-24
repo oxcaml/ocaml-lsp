@@ -1,8 +1,8 @@
 (lang dune 3.11)
-(name ocaml-lsp)
+(name ocaml-lsp-server)
 
 (package
- (name ocaml-lsp)
+ (name ocaml-lsp-server)
  (synopsis "OCaml Language Server Protocol implementation")
  (allow_empty)
  (depends
