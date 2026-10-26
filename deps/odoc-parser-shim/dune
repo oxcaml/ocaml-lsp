@@ -1,0 +1,16 @@
+(rule
+ (target ocaml_lsp_odoc_parser_shim.ml)
+ (enabled_if (< %{version:odoc-parser} 3.0.0))
+ (action
+  (copy %{dep:ocaml_lsp_odoc_parser_shim.odoc-parser-2.ml} %{target})))
+
+(rule
+ (target ocaml_lsp_odoc_parser_shim.ml)
+ (enabled_if (>= %{version:odoc-parser} 3.0.0))
+ (action
+  (copy %{dep:ocaml_lsp_odoc_parser_shim.odoc-parser-3.ml} %{target})))
+
+(library
+ (name ocaml_lsp_odoc_parser_shim)
+ (modules ocaml_lsp_odoc_parser_shim)
+ (libraries odoc-parser))

@@ -16,7 +16,7 @@ depends: [
   "lrgrep"
   "merlin-lib"
   "ocamlc-loc"
-  "odoc-parser" {= "2.0.0"}
+  "odoc-parser" {>= "2.0.0"}
   "ppx_bin_prot"
   "ppx_compare"
   "ppx_enumerate"

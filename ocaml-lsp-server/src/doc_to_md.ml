@@ -98,7 +98,11 @@ and inline_element_list_to_inlines inlines =
 let rec nestable_block_element_to_block
   (nestable : Odoc_parser.Ast.nestable_block_element Odoc_parser.Loc.with_location)
   =
-  match nestable with
+  match
+    { nestable with
+      value = Ocaml_lsp_odoc_parser_shim.nestable_block_element nestable.value
+    }
+  with
   | { value = `Paragraph text; location } ->
     let paragraph =
       let inline = inline_element_list_to_inlines text in
@@ -155,8 +159,7 @@ let rec nestable_block_element_to_block
         let info_string =
           match metadata with
           | None -> Some ("ocaml", loc_to_meta code_loc)
-          | Some ({ value = lang; location = lang_log }, _env) ->
-            Some (lang, loc_to_meta lang_log)
+          | Some { value = lang; location = lang_log } -> Some (lang, loc_to_meta lang_log)
         in
         let block_line = Block_line.list_of_string code in
         Block.Code_block.make ?info_string block_line
@@ -179,6 +182,14 @@ let rec nestable_block_element_to_block
     in
     let meta = loc_to_meta location in
     Block.Ext_math_block (code_block, meta)
+  | { value = `Table rows; location } ->
+    let cells =
+      List.concat_map rows ~f:(List.map ~f:nestable_block_element_list_to_block)
+    in
+    Block.Blocks (cells, loc_to_meta location)
+  | { value = `Media; location } ->
+    let meta = loc_to_meta location in
+    Block.Paragraph (Block.Paragraph.make (Inline.Text ("(media)", meta)), meta)
 
 and nestable_block_element_list_to_block nestables =
   let blocks = List.map ~f:nestable_block_element_to_block nestables in
@@ -231,7 +242,7 @@ let tag_to_block ~meta (tag : Odoc_parser.Ast.tag) =
     in
     Block.Blocks ([ prefix; block ], meta)
   in
-  match tag with
+  match Ocaml_lsp_odoc_parser_shim.tag tag with
   | `Author s ->
     let s = Inline.Text (s, Meta.none) in
     format_tag_string "@author" s
@@ -276,6 +287,15 @@ let tag_to_block ~meta (tag : Odoc_parser.Ast.tag) =
   | `Inline -> format_tag_empty "@inline"
   | `Open -> format_tag_empty "@open"
   | `Closed -> format_tag_empty "@closed"
+  | `Hidden -> format_tag_empty "@hidden"
+  | `Children_order text ->
+    format_tag_block "@children_order" (nestable_block_element_list_to_block text)
+  | `Toc_status text ->
+    format_tag_block "@toc_status" (nestable_block_element_list_to_block text)
+  | `Order_category text ->
+    format_tag_block "@order_category" (nestable_block_element_list_to_block text)
+  | `Short_title text ->
+    format_tag_block "@short_title" (nestable_block_element_list_to_block text)
 ;;
 
 let rec block_element_to_block
@@ -292,10 +312,8 @@ let rec block_element_to_block
   | { value = `Tag t; location } ->
     let meta = loc_to_meta location in
     tag_to_block ~meta t
-  | { value =
-        `Paragraph _ | `List _ | `Modules _ | `Code_block _ | `Verbatim _ | `Math_block _
-    ; location = _
-    } as nestable -> nestable_block_element_to_block nestable
+  | { value = #Odoc_parser.Ast.nestable_block_element as value; location } ->
+    nestable_block_element_to_block { value; location }
 
 and block_element_list_to_block l =
   let rec aux acc rest =

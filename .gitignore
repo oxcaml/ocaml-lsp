@@ -14,3 +14,4 @@ deps/thread-safe-ivar/ocaml_lsp_thread_safe_ivar.ml
 deps/uri/src/ocaml_lsp_uri.ml
 deps/version/ocaml_lsp_version.ml
 deps/misc-shims/ocaml_lsp_misc_shims.ml
+deps/odoc-parser-shim/ocaml_lsp_odoc_parser_shim.ml
