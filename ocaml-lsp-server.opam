@@ -36,7 +36,6 @@ depends: [
   "spawn"
   "uutf"
   "yojson"
-  "menhir" {with-test & = "20231231"}
 ]
 build: [
   ["dune" "build" "-p" "ocaml-lsp-server,jsonrpc,lsp" "@install"]
