@@ -6,6 +6,7 @@
 
 (library
  (name ocaml_lsp_dune_integration)
+ (package lsp)
  (modules ocaml_lsp_dune_integration)
  (libraries async core file_path)
  (preprocess (pps ppx_compare ppx_sexp_conv ppx_let)))

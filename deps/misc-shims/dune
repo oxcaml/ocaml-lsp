@@ -6,5 +6,6 @@
 
 (library
  (name ocaml_lsp_misc_shims)
+ (package lsp)
  (modules ocaml_lsp_misc_shims)
  (libraries base core ppx_string))

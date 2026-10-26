@@ -41,5 +41,5 @@ val call_compatible_query
   -> stage:Stage.t
   -> disable_remote_lsp:(unit -> unit)
   -> metadata:Metadata_for_query.t
-  -> params:Lsp_json_rpc_types.Jsonrpc.Structured.t option
+  -> params:Jsonrpc.Structured.t option
   -> Lsp.Json.t option Fiber.t

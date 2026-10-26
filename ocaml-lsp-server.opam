@@ -44,8 +44,8 @@ depends: [
   "ocamlc-loc" {= "3.23.1"}
 ]
 build: [
-  ["dune" "build" "-p" name "@install"]
+  ["dune" "build" "-p" "ocaml-lsp-server,jsonrpc,lsp" "@install"]
 ]
 run-test: [
-  ["dune" "runtest" "-p" name]
+  ["dune" "runtest" "-p" "ocaml-lsp-server,jsonrpc,lsp"]
 ]

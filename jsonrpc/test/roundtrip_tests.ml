@@ -2,8 +2,6 @@ open! Core
 
 [@@@alert "-private_lsp_library"]
 
-module Jsonrpc = Lsp_json_rpc_types.Jsonrpc
-
 let roundtrip_packet json_str =
   let json = Yojson.Safe.from_string json_str in
   let packet = Jsonrpc.Packet.t_of_yojson json in

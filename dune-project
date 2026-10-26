@@ -2,6 +2,12 @@
 (name ocaml-lsp-server)
 
 (package
+ (name jsonrpc))
+
+(package
+ (name lsp))
+
+(package
  (name ocaml-lsp-server)
  (synopsis "OCaml Language Server Protocol implementation")
  (allow_empty)

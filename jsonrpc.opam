@@ -1,0 +1,10 @@
+opam-version: "2.0"
+synopsis: "JSON-RPC protocol implementation"
+depends: [
+  "dune" {>= "3.11"}
+  "core"
+  "yojson"
+]
+build: [
+  ["dune" "build" "-p" name "@install"]
+]
