@@ -8,6 +8,7 @@ module Diff = Diff
 module References_req = References_req
 module Testing = Testing
 module Stage = Stage
+module Util = Util
 open Fiber.O
 
 let make_error = Jsonrpc.Response.Error.make

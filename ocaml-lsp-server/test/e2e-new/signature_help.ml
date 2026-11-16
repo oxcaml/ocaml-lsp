@@ -99,7 +99,7 @@ let _ = make_message ~content:"hello"
   [%expect
     {|
     {
-      "activeParameter": 1,
+      "activeParameter": 2,
       "activeSignature": 0,
       "signatures": [
         {
@@ -165,7 +165,7 @@ let _ = apply (fun x -> x + 1)
   [%expect
     {|
     {
-      "activeParameter": 0,
+      "activeParameter": 1,
       "activeSignature": 0,
       "signatures": [
         {
