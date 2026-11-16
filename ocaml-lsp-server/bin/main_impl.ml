@@ -66,6 +66,13 @@ let command ~is_deployed_binary =
            "NAME Logical name of this ocaml-lsp worker (typically set by \
             [ocaml-lsp-wrapper]). Included in logs and structured logging datasets. Do \
             not set if running [ocaml-lsp] directly"
+     and username =
+       flag
+         "username"
+         (optional string)
+         ~doc:
+           "USERNAME User on whose behalf this ocaml-lsp runs. Included in logs and \
+            structured logging datasets instead of the user running the process"
      in
      fun () ->
        Option.iter client_pid ~f:(fun pid ->
@@ -79,5 +86,5 @@ let command ~is_deployed_binary =
          | _, Some ds -> Ocaml_lsp_server.Stage.Deployed ds
          | false, None -> Ocaml_lsp_server.Stage.Localhost
        in
-       Ocaml_lsp_server.run channel ~dot_merlin ~stage ~worker_name)
+       Ocaml_lsp_server.run channel ~dot_merlin ~stage ~worker_name ~username)
 ;;

@@ -5,6 +5,7 @@ val init
   :  deployment_stage:Stage.t
   -> client_info:Lsp.Types.Client_info.t option
   -> worker_name:string option
+  -> username:string option
   -> t Async.Deferred.t
 
 val close : t -> unit Core.Or_error.t Async.Deferred.t

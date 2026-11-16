@@ -5,6 +5,7 @@ _opam
 
 _build_oss/
 _oxcaml/
+deps/code-formatter/ocaml_lsp_code_formatter.ml
 deps/css-lsp/ocaml_lsp_css_lsp.ml
 deps/dune-integration/ocaml_lsp_dune_integration.ml
 deps/logging/ocaml_lsp_logging.ml

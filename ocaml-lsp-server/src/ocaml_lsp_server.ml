@@ -148,7 +148,6 @@ let initialize_info (client_capabilities : ClientCapabilities.t) : InitializeRes
       ~documentFormattingProvider:(`Bool false)
       ~selectionRangeProvider:(`Bool true)
       ~documentSymbolProvider:(`Bool true)
-      ~workspaceSymbolProvider:(`Bool true)
       ~foldingRangeProvider:(`Bool true)
       ~semanticTokensProvider
       ~experimental
@@ -240,6 +239,7 @@ let init_logging state =
         ~deployment_stage:(State.stage state)
         ~client_info
         ~worker_name:state.worker_name
+        ~username:state.username
     in
     state.logging_session <- Some logging_session;
     return ())
@@ -725,8 +725,7 @@ let on_request
        ; Req_infer_intf.meth, Req_infer_intf.on_request ~log_info
        ; Req_typed_holes.meth, Req_typed_holes.on_request ~log_info
        ; Req_typed_holes.jump, Req_typed_holes.on_jump_request ~log_info
-       ; ( Req_merlin_call_compatible.meth
-         , Req_merlin_call_compatible.on_request ~log_info server )
+       ; Req_merlin_call_compatible.meth, Req_merlin_call_compatible.on_request ~log_info
        ; Req_type_enclosing.meth, Req_type_enclosing.on_request ~log_info
        ; Req_get_documentation.meth, Req_get_documentation.on_request ~log_info
        ; Req_wrapping_ast_node.meth, Req_wrapping_ast_node.on_request ~log_info
@@ -764,8 +763,6 @@ let on_request
        now (Some text))
   | DebugEcho params -> now params
   | Shutdown -> Fiber.return (Reply.now (), state)
-  | WorkspaceSymbol req ->
-    later (fun state () -> Workspace_symbol.run server state req) ()
   | CodeActionResolve ca -> now ca
   | ExecuteCommand command ->
     if String.equal command.command Merlin_config_command.command_name
@@ -921,6 +918,7 @@ let on_request
   | TextDocumentDiagnostic _ -> not_supported ()
   | TextDocumentInlineCompletion _ -> not_supported ()
   | TextDocumentInlineValue _ -> not_supported ()
+  | WorkspaceSymbol _ -> not_supported ()
   | WorkspaceSymbolResolve _ -> not_supported ()
   | WorkspaceDiagnostic _ -> not_supported ()
   | TextDocumentRangesFormatting _ -> not_supported ()
@@ -930,24 +928,53 @@ let on_request
 ;;
 
 (* Compute the relative directory path from a file URI, relative to the Dune root. This is
-   used for build-watch subscriptions. *)
-let relative_dir_of_uri (state : State.t) uri =
+   used for build-watch subscriptions. Returns [None] for files outside the Dune root or
+   inside the build directory *)
+let relative_dir_of_uri ~dune_root uri =
   let file_path = Uri.drop_query uri |> Uri.to_path in
   let dir = Filename.dirname file_path in
-  let workspace_root_path =
-    match state.init with
-    | Initialized { params = { rootUri; _ }; _ } ->
-      Option.map rootUri ~f:(fun root -> Uri.to_path root)
-    | Uninitialized -> None
+  let relative =
+    Option.bind dune_root ~f:(fun root ->
+      (* Compare whole path components, so that e.g. [/ws] doesn't contain [/wsx]. *)
+      let root = String.rstrip root ~drop:(Char.equal '/') in
+      if String.equal dir root
+      then Some ""
+      else String.chop_prefix dir ~prefix:(root ^ "/"))
   in
-  match Option.map workspace_root_path ~f:Ocaml_lsp_dune_integration.dune_root_of with
-  | Some root when String.is_prefix dir ~prefix:root ->
-    let relative =
-      String.chop_prefix_if_exists dir ~prefix:root
-      |> String.chop_prefix_if_exists ~prefix:"/"
-    in
-    if String.is_empty relative then "." else relative
-  | _ -> dir
+  Option.bind relative ~f:(fun relative ->
+    match String.split relative ~on:'/' with
+    | "_build" :: _ -> None
+    | _ -> Some (if String.is_empty relative then "." else relative))
+;;
+
+(* The Dune root of the editor's workspace, if the editor sent a [rootUri]. *)
+let dune_root (state : State.t) =
+  match state.init with
+  | Initialized { params = { rootUri; _ }; _ } ->
+    Option.map rootUri ~f:(fun root ->
+      Ocaml_lsp_dune_integration.dune_root_of (Uri.to_path root))
+  | Uninitialized -> None
+;;
+
+let dune_open_dir_impl
+  dune_subscriptions
+  (action : [ `Register | `Unregister ])
+  uri
+  ~dune_root
+  =
+  match relative_dir_of_uri ~dune_root uri with
+  | Some dir ->
+    (match action with
+     | `Register -> Dune_subscriptions.register_open_dir dune_subscriptions ~dir
+     | `Unregister -> Dune_subscriptions.unregister_open_dir dune_subscriptions ~dir)
+  | None -> Fiber.return ()
+;;
+
+(* Register or unregister an open directory with Dune as long as it is in the appropriate
+   place in the workspace *)
+let dune_open_dir (action : [ `Register | `Unregister ]) state dune_subscriptions uri =
+  let dune_root = dune_root state in
+  dune_open_dir_impl dune_subscriptions action uri ~dune_root
 ;;
 
 let on_notification
@@ -994,8 +1021,7 @@ let on_notification
         | Some dune_subscriptions
           when (not (State.editor_is_vscode state))
                && Configuration.dune_build_on_open state.configuration ->
-          let dir = relative_dir_of_uri state params.textDocument.uri in
-          Dune_subscriptions.register_open_dir dune_subscriptions ~dir
+          dune_open_dir `Register state dune_subscriptions params.textDocument.uri
         | _ -> Fiber.return ()
       in
       (* vim does not send a root uri during initialization so we extract the feature id
@@ -1016,8 +1042,7 @@ let on_notification
       let+ () =
         match State.dune_subscriptions state with
         | Some dune_subscriptions when not (State.editor_is_vscode state) ->
-          let dir = relative_dir_of_uri state uri in
-          Dune_subscriptions.unregister_open_dir dune_subscriptions ~dir
+          dune_open_dir `Unregister state dune_subscriptions uri
         | _ -> Fiber.return ()
       in
       state, None
@@ -1096,8 +1121,7 @@ let on_notification
         match State.dune_subscriptions state with
         | Some dune_subscriptions
           when Configuration.dune_build_on_open state.configuration ->
-          let dir = relative_dir_of_uri state params.textDocument.uri in
-          Dune_subscriptions.register_open_dir dune_subscriptions ~dir
+          dune_open_dir `Register state dune_subscriptions params.textDocument.uri
         | _ -> Fiber.return ()
       in
       state, None
@@ -1107,8 +1131,7 @@ let on_notification
       let+ () =
         match State.dune_subscriptions state with
         | Some dune_subscriptions ->
-          let dir = relative_dir_of_uri state params.textDocument.uri in
-          Dune_subscriptions.unregister_open_dir dune_subscriptions ~dir
+          dune_open_dir `Unregister state dune_subscriptions params.textDocument.uri
         | None -> Fiber.return ()
       in
       state, None
@@ -1119,7 +1142,7 @@ let on_notification
       state, None)
 ;;
 
-let start stream ~stage ~worker_name =
+let start stream ~stage ~worker_name ~username =
   let detached = Fiber.Pool.create () in
   let server = Fdecl.create [%sexp_of: _] in
   let store = Document_store.make server detached in
@@ -1127,7 +1150,6 @@ let start stream ~stage ~worker_name =
     let on_request = { Server.Handler.on_request } in
     Server.Handler.make ~on_request ~on_notification ()
   in
-  let ocamlformat_rpc = Ocamlformat_rpc.create () in
   let* configuration = Configuration.default stage in
   let wheel = Configuration.wheel configuration in
   let server_ref = ref None in
@@ -1140,7 +1162,6 @@ let start stream ~stage ~worker_name =
   in
   let* merlin = Priority_lsp_executor.create ~get_logging_session in
   let server =
-    let symbols_thread = Lazy_fiber.create Lev_fiber.Thread.create in
     Fdecl.set
       server
       (Server.make
@@ -1149,12 +1170,11 @@ let start stream ~stage ~worker_name =
          (State.create
             ~store
             ~merlin
-            ~ocamlformat_rpc
             ~configuration
             ~detached
-            ~symbols_thread
             ~wheel
-            ~worker_name));
+            ~worker_name
+            ~username));
     Fdecl.get ~here:[%here] server
   in
   let state = Server.state server in
@@ -1169,26 +1189,6 @@ let start stream ~stage ~worker_name =
         f
     in
     ()
-  in
-  let run_ocamlformat_rpc () =
-    let* state = Ocamlformat_rpc.run ~logger:(State.log_msg server) ocamlformat_rpc in
-    let message =
-      match state with
-      | Error `Binary_not_found ->
-        Some
-          "Unable to find 'ocamlformat-rpc' binary. Types on hover may not be \
-           well-formatted. You need to install either 'ocamlformat' of version > 0.21.0 \
-           or, otherwise, 'ocamlformat-rpc' package."
-      | Error `Disabled | Ok () -> None
-    in
-    match message with
-    | None -> Fiber.return ()
-    | Some message ->
-      let* (_ : InitializeParams.t) = Server.initialized server in
-      let state = Server.state server in
-      task_if_running state.detached ~f:(fun () ->
-        let log = ShowMessageParams.create ~type_:Info ~message in
-        Server.notification server (Server_notification.ShowMessage log))
   in
   let run () =
     Fiber.all_concurrently_unit
@@ -1217,7 +1217,6 @@ let start stream ~stage ~worker_name =
          let finalize =
            [ Document_store.close_all store
            ; Fiber.Pool.close detached
-           ; Ocamlformat_rpc.stop ocamlformat_rpc
            ; Lev_fiber.Timer.Wheel.stop wheel
            ; Merlin_config.DB.stop state.merlin_config
            ; Fiber.of_thunk (fun () -> Priority_lsp_executor.close merlin)
@@ -1226,7 +1225,6 @@ let start stream ~stage ~worker_name =
            ]
          in
          Fiber.all_concurrently_unit finalize)
-      ; with_log_errors "ocamlformat-rpc" run_ocamlformat_rpc
       ]
   in
   let metrics = Metrics.create () in
@@ -1318,7 +1316,7 @@ let run_in_directory =
   fun () -> if Sys.win32 then for_windows else run_in_directory
 ;;
 
-let run channel ~dot_merlin ~stage ~worker_name =
+let run channel ~dot_merlin ~stage ~worker_name ~username =
   Merlin_utils.Lib_config.set_program_name "ocamllsp";
   Merlin_utils.Lib_config.System.set_run_in_directory (run_in_directory ());
   Merlin_config.dot_merlin := dot_merlin;
@@ -1328,7 +1326,7 @@ let run channel ~dot_merlin ~stage ~worker_name =
   let main =
     Fiber.of_thunk (fun () ->
       let* input, output = stream_of_channel channel in
-      start (Lsp_fiber.Fiber_io.make input output) ~stage ~worker_name)
+      start (Lsp_fiber.Fiber_io.make input output) ~stage ~worker_name ~username)
   in
   Fiber_async.deferred_of_fiber main ()
 ;;
@@ -1336,3 +1334,8 @@ let run channel ~dot_merlin ~stage ~worker_name =
 module Compl = Compl
 module Custom_request = Custom_request
 module Dune_subscriptions = Dune_subscriptions
+
+module For_testing = struct
+  let relative_dir_of_uri = relative_dir_of_uri
+  let dune_open_dir_impl = dune_open_dir_impl
+end

@@ -1,4 +1,5 @@
 (library
- (name lsp_json_rpc_types)
-
+ (name jsonrpc)
+ (public_name jsonrpc)
+ (modules (:standard \ lsp_json_rpc_types))
  (libraries core yojson))

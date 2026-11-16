@@ -81,17 +81,6 @@ module Structured = struct
   let yojson_of_t t = (t :> Json.t)
   let of_string s = Yojson.Safe.from_string s |> t_of_yojson
   let to_string t = yojson_of_t t |> Yojson.Safe.to_string
-
-  (** Updates any values associated with [key] in the top-level [`Assoc] of [json]. *)
-  let update_json_structured ~key ~(modify_value : string -> string) (json : t) =
-    match json with
-    | `Assoc assoc ->
-      `Assoc
-        (List.map assoc ~f:(function
-          | k, `String v when String.equal k key -> k, `String (modify_value v)
-          | k_v -> k_v))
-    | lst -> lst
-  ;;
 end
 
 module Notification = struct

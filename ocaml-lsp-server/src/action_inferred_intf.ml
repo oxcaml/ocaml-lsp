@@ -34,15 +34,12 @@ let code_action ~log_info (state : State.t) doc (params : CodeActionParams.t) =
     (match intf with
      | None -> Fiber.return None
      | Some intf ->
-       let+ formatted_intf =
-         Ocamlformat_rpc.format_type state.ocamlformat_rpc ~typ:intf
-       in
        let intf =
-         match formatted_intf with
+         match Ocamlformat_rpc.format_code intf with
          | Ok formatted_intf -> formatted_intf
-         | Error _ -> intf
+         | Error (_ : Core.Error.t) | Formatting_not_supported -> intf
        in
-       Some (code_action_of_intf doc intf params.range))
+       Fiber.return (Some (code_action_of_intf doc intf params.range)))
 ;;
 
 let kind = CodeActionKind.Other action_kind

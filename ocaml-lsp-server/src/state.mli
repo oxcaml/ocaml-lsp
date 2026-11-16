@@ -27,8 +27,6 @@ type t =
   ; detached : Fiber.Pool.t
   ; configuration : Configuration.t
   ; trace : TraceValue.t
-  ; ocamlformat_rpc : Ocamlformat_rpc.t
-  ; symbols_thread : Lev_fiber.Thread.t Lazy_fiber.t
   ; wheel : Lev_fiber.Timer.Wheel.t
   ; hover_extended : hover_extended
   ; feature_id : Feature_id.t option
@@ -42,6 +40,9 @@ type t =
   (** Logical name of this ocaml-lsp worker, as passed via [-worker-name]. Included in
       logs and threaded into [Ocaml_lsp_logging.init] so that every log management entry
       and every structured logging row can be attributed to the worker that emitted it. *)
+  ; username : string option
+  (** User on whose behalf this ocaml-lsp runs, as passed via [-username]. Overrides the
+      username in logs. *)
   }
 
 val create
@@ -49,10 +50,9 @@ val create
   -> merlin:Priority_lsp_executor.t
   -> detached:Fiber.Pool.t
   -> configuration:Configuration.t
-  -> ocamlformat_rpc:Ocamlformat_rpc.t
-  -> symbols_thread:Lev_fiber.Thread.t Lazy_fiber.t
   -> wheel:Lev_fiber.Timer.Wheel.t
   -> worker_name:string option
+  -> username:string option
   -> t
 
 val position_encoding : t -> [ `UTF16 | `UTF8 ]

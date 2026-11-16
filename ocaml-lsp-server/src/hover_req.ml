@@ -331,20 +331,17 @@ let type_enclosing_hover
     let syntax = Document.syntax doc in
     let* typ =
       (* We ask Ocamlformat to format this type *)
-      let* result = Ocamlformat_rpc.format_type state.ocamlformat_rpc ~typ in
-      match result with
-      | Ok v ->
-        (* OCamlformat adds an unnecessay newline at the end of the type *)
-        Fiber.return (String.strip v)
-      | Error `No_process -> Fiber.return typ
-      | Error (`Msg message) ->
+      match Ocamlformat_rpc.format_type ~typ with
+      | Ok v -> Fiber.return v
+      | Formatting_not_supported -> Fiber.return typ
+      | Error error ->
         (* We log OCamlformat errors and display the unformated type *)
         let+ () =
           let message =
             sprintf
               "An error occured while querying ocamlformat:\nInput type: %s\n\nAnswer: %s"
               typ
-              message
+              (Core.Error.to_string_hum error)
           in
           State.log_msg server ~type_:Warning ~message
         in

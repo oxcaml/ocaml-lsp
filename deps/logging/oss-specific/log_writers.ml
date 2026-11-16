@@ -17,6 +17,7 @@ let log_merlin_timing
   ()
 ;;
 
+let log_cmi_reads ~cache_information:_ ~document_uri:_ _ = ()
 let log_event ?message:_ ?category:_ ?info:_ _ = ()
 let log_queue_stats ~action:_ ~realtime_size:_ ~background_size:_ ~total_size:_ _ = ()
 let log_reference_counts ?message:_ ~local_count:_ ~remote_count:_ ~merged_count:_ _ = ()

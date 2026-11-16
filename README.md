@@ -14,6 +14,10 @@ A lifecycle of an OSS contribution to this repo is:
    branch
 6. the PR is closed.
 
+Packages
+--------
+This repository provides the `jsonrpc`, `lsp`, and `ocaml-lsp-server` opam packages.
+
 Build and test
 --------------
 To build the repo:
@@ -35,7 +39,7 @@ commands also do their best to not re-install/re-build anything that is already 
 
 In more detail, `make buildoss` will create a local `opam` switch (in the `_opam` subdirectory),
 using `ocaml-base-compiler.5.4.1`, then pin `merlin-lib` and install the rest of
-`ocaml-lsp.opam` dependencies. `make runtestoss` will do the same, and in addition it will
+`jsonrpc.opam`, `lsp.opam`, and `ocaml-lsp-server.opam` dependencies. `make runtestoss` will do the same, and in addition it will
 also build an *oxcaml* standard library under `_oxcaml/_install/lib/ocaml`. This stdlib is
 needed (and `ocaml` stdlib cannot be used) because this project *targets* `oxcaml` despite
 being *built* in `ocaml`. So the e2e tests contain the source code of the analyzed program, which is `oxcaml` code. And that `oxcaml` code needs access to `oxcaml` stdlib to work properly.

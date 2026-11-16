@@ -1,0 +1,4 @@
+# Build the protocol libraries from this checkout, not separately installed packages.
+build: [
+  ["dune" "build" "-p" "ocaml-lsp-server,jsonrpc,lsp" "@install" "@runtest" {with-test}]
+]

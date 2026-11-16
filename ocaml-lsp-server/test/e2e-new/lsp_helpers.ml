@@ -42,7 +42,7 @@ let create_client client =
   run_client
 ;;
 
-let open_document_with_client ~prep ~path ~source client =
+let open_document_with_client ~prep ~uri ~source client =
   let* (_ : InitializeResult.t) = Client.initialized client in
   let* () =
     let settings =
@@ -57,7 +57,6 @@ let open_document_with_client ~prep ~path ~source client =
     in
     Client.notification client (ChangeConfiguration { settings })
   in
-  let uri = DocumentUri.of_path path in
   let* () = prep client in
   open_document ~client ~uri ~source
 ;;
@@ -65,10 +64,12 @@ let open_document_with_client ~prep ~path ~source client =
 let iter_lsp_response
   ?(prep = fun _ -> Fiber.return ())
   ?(path = "foo.ml")
+  ?uri
   ~makeRequest
   ~source
   k
   =
+  let uri = Option.value uri ~default:(DocumentUri.of_path path) in
   let got_diagnostics = Fiber.Ivar.create () in
   let handler =
     create_handler_with_diagnostics_callback
@@ -79,9 +80,8 @@ let iter_lsp_response
   @@ fun client ->
   let run_client = create_client client in
   let run =
-    let* () = open_document_with_client ~prep ~path ~source client in
+    let* () = open_document_with_client ~prep ~uri ~source client in
     let+ resp =
-      let uri = DocumentUri.of_path path in
       let request =
         let textDocument = TextDocumentIdentifier.create ~uri in
         makeRequest textDocument
@@ -110,7 +110,9 @@ let open_document_with_diagnostics_callback
   Test.run ~handler ?cwd ?extra_env
   @@ fun client ->
   let run_client = create_client client in
-  let open_document = open_document_with_client ~prep ~path ~source client in
+  let open_document =
+    open_document_with_client ~prep ~uri:(DocumentUri.of_path path) ~source client
+  in
   Fiber.fork_and_join_unit run_client (fun () ->
     open_document >>> Fiber.Ivar.read got_diagnostics >>> Client.stop client)
 ;;

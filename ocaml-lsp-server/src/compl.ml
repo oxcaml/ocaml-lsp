@@ -84,6 +84,11 @@ let reconstruct_ident source position =
   Option.some_if (ident <> "") ident
 ;;
 
+let should_hide_double_underscore_name ~typed name =
+  let has_double_underscore s = String.is_substring s ~substring:"__" in
+  has_double_underscore name && not (has_double_underscore typed)
+;;
+
 let range_prefix (lsp_position : Position.t) prefix : Range.t =
   let start =
     let len = String.length prefix in
@@ -162,12 +167,10 @@ module Complete_by_prefix = struct
          | _ -> [])
     in
     let filter_ppx_template_items completion_items =
-      (* Filter out all the ppx_template-generated completions, such as
-         [Option.value__'value_bits32'], by removing any containing a double underscore *)
       List.filter completion_items ~f:(fun ({ textEdit; _ } : CompletionItem.t) ->
         match textEdit with
         | Some (`TextEdit { newText; _ }) ->
-          String.substr_index newText ~pattern:"__" |> Option.is_none
+          not (should_hide_double_underscore_name ~typed:suffix newText)
         | _ -> true)
     in
     let completion_items =
@@ -176,11 +179,7 @@ module Complete_by_prefix = struct
           completion_entries
           ~f:(completionItem_of_completion_entry ~deprecated ~range ~compl_params)
     in
-    let user_typed_double_underscore =
-      String.substr_index suffix ~pattern:"__" |> Option.is_some
-    in
     if Config_data.is_filter_double_underscore_enabled state.configuration.data
-       && not user_typed_double_underscore
     then filter_ppx_template_items completion_items
     else completion_items
   ;;
@@ -228,6 +227,18 @@ module Complete_by_prefix = struct
       completion_entries
   ;;
 
+  module Function_label = struct
+    type t =
+      { name : string
+      ; type_ : string
+      }
+  end
+
+  type t =
+    { entries : CompletionItem.t list
+    ; application_labels : Function_label.t list option
+    }
+
   let process_dispatch_resp_nosquash
     ~deprecated
     ~resolve
@@ -240,7 +251,8 @@ module Complete_by_prefix = struct
     =
     (* Don't squash any function argument names into the completions, instead return both
        the completions and any such function argument names. *)
-    ( process_entries
+    let entries =
+      process_entries
         ~deprecated
         ~resolve
         ~suffix
@@ -249,9 +261,14 @@ module Complete_by_prefix = struct
         pos
         parsetree
         completion.entries
-    , match completion.context with
+    in
+    let application_labels =
+      match completion.context with
       | `Unknown -> None
-      | `Application { Query_protocol.Compl.labels; argument_type = _ } -> Some labels )
+      | `Application { Query_protocol.Compl.labels; argument_type = _ } ->
+        Some (List.map labels ~f:(fun (name, type_) -> { Function_label.name; type_ }))
+    in
+    { entries; application_labels }
   ;;
 
   let completion_and_parsetree ~log_info doc ~prefix pos =

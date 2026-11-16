@@ -229,3 +229,85 @@ let f () =
       fun_name ()
     |}]
 ;;
+
+let%expect_test "extract local in then branch" =
+  let%map () =
+    extract_local_test
+      {|
+let f c x =
+  if c then 1 + $(x * 2)$ else 0
+|}
+  in
+  [%expect
+    {|
+    let f c x =
+      let var_name = (x * 2) in
+    if c then 1 + var_name else 0
+    |}]
+;;
+
+let%expect_test "extract local in else branch" =
+  let%map () =
+    extract_local_test
+      {|
+let f c x =
+  if c then 0 else $(x * 2)$ + 1
+|}
+  in
+  [%expect
+    {|
+    let f c x =
+      let var_name = (x * 2) in
+    if c then 0 else var_name + 1
+    |}]
+;;
+
+let%expect_test "extract local of whole branch" =
+  let%map () =
+    extract_local_test
+      {|
+let f c x =
+  if c then $x * 2$ else 0
+|}
+  in
+  [%expect
+    {|
+    let f c x =
+      let var_name = x * 2 in
+    if c then var_name else 0
+    |}]
+;;
+
+let%expect_test "extract local in then branch without else followed by sequence" =
+  let%map () =
+    extract_local_test
+      {|
+let f c x =
+  if c then print_int $(x * 2)$;
+  print_newline ()
+|}
+  in
+  [%expect
+    {|
+    let f c x =
+      let var_name = (x * 2) in
+    if c then print_int var_name;
+      print_newline ()
+    |}]
+;;
+
+let%expect_test "extract local in condition" =
+  let%map () =
+    extract_local_test
+      {|
+let f x =
+  if $x > 2$ then 1 else 0
+|}
+  in
+  [%expect
+    {|
+    let f x =
+      let var_name = x > 2 in
+    if var_name then 1 else 0
+    |}]
+;;

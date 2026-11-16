@@ -48,19 +48,12 @@ let code_action ~log_info (state : State.t) doc (params : CodeActionParams.t) =
     let* res = Document.Merlin.dispatch ~log_info ~priority merlin command in
     (match res with
      | Ok (loc, newText) ->
-       let+ newText =
-         let+ formatted_text =
-           Ocamlformat_rpc.format_type state.ocamlformat_rpc ~typ:newText
-         in
-         match formatted_text with
-         | Ok formatted_text -> formatted_text
-         | Error _ -> newText
-       in
        let supportsJumpToNextHole =
          State.experimental_client_capabilities state
          |> Client.Experimental_capabilities.supportsJumpToNextHole
        in
        Some (code_action_of_case_analysis ~supportsJumpToNextHole doc uri (loc, newText))
+       |> Fiber.return
      | Error
          { exn =
              ( Merlin_analysis.Destruct.Wrong_parent _

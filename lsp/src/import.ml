@@ -268,19 +268,6 @@ module Json = struct
     | Error e -> Error e
     | Ok x -> read_json_params f x
   ;;
-
-  (** Updates all values associated with [key] in any [`Assoc] within [json]. *)
-  let rec update_json ~key ~(modify_value : string -> string) (json : t) =
-    match json with
-    | `Assoc assoc ->
-      `Assoc
-        (List.map assoc ~f:(function
-          | k, `String v when String.equal k key -> k, `String (modify_value v)
-          | k, v -> k, update_json ~key ~modify_value v))
-    | `List l -> `List (List.map l ~f:(update_json ~key ~modify_value))
-    | `Tuple l -> `Tuple (List.map l ~f:(update_json ~key ~modify_value))
-    | atom -> atom
-  ;;
 end
 
 let sprintf = Printf.sprintf

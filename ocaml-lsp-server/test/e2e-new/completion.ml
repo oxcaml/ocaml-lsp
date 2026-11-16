@@ -169,7 +169,7 @@ let%expect_test "Fuzzy completion enabled (VSCode behavior)" =
       }
     }
     {
-      "detail": "type ('a : value_or_null) list = [] | (::) of 'a * 'a list",
+      "detail": "type ('a : any) list = [] | (::) of 'a * 'a list",
       "kind": 25,
       "label": "list",
       "sortText": "0351",
@@ -195,7 +195,7 @@ let%expect_test "Fuzzy completion enabled (VSCode behavior)" =
     {|
     Completions:
     {
-      "detail": "type ('a : value_or_null) list = [] | (::) of 'a * 'a list",
+      "detail": "type ('a : any) list = [] | (::) of 'a * 'a list",
       "kind": 25,
       "label": "list",
       "sortText": "0278",

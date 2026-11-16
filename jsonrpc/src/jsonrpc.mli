@@ -60,7 +60,6 @@ module Structured : sig
 
   val of_string : string -> t
   val to_string : t -> string
-  val update_json_structured : key:string -> modify_value:(string -> string) -> t -> t
 end
 
 module Notification : sig

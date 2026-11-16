@@ -7,6 +7,7 @@ module Metadata_for_query : sig
     ; workspace : File_path.Absolute.t
     ; file_contents : string
     ; file_path : File_path.t
+    ; client_info : Lsp.Types.Client_info.t option
     }
 end
 
@@ -35,11 +36,3 @@ val references_query
   -> Lsp.Types.Position.t
   -> Lsp.Types.ReferenceContext.t
   -> Lsp.Types.Location.t list option Fiber.t
-
-val call_compatible_query
-  :  log_info:Ocaml_lsp_logging.Log_info.t
-  -> stage:Stage.t
-  -> disable_remote_lsp:(unit -> unit)
-  -> metadata:Metadata_for_query.t
-  -> params:Lsp_json_rpc_types.Jsonrpc.Structured.t option
-  -> Lsp.Json.t option Fiber.t

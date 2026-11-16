@@ -168,6 +168,11 @@ let text_edit_opt shared_signature ~formatter =
   in
   match sig_strings with
   | [ oldText; newText ] when not (String.equal oldText newText) ->
+    let newText =
+      match Ocamlformat_rpc.format_code newText with
+      | Ok newText -> newText
+      | Error (_ : Core.Error.t) | Formatting_not_supported -> newText
+    in
     Some ({ range = shared_signature.range; newText } : TextEdit.t)
   | _ -> None
 ;;

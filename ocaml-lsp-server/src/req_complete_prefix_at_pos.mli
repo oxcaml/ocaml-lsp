@@ -14,5 +14,5 @@ val on_request
   -> Json.t Fiber.t
 
 module For_testing : sig
-  val serialize : CompletionItem.t list * (string * string) list option -> Json.t
+  val serialize : Compl.Complete_by_prefix.t -> Json.t
 end

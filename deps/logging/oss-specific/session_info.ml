@@ -13,7 +13,7 @@ end
 type t =
   { username : string
   ; deployment_stage : Stage.t
-  ; log_paths_and_features : bool
+  ; sensitivity_context : Sensitivity_context.t
   ; client_info : Client_info.t option
   ; host : string
   ; ocaml_version : string
@@ -24,10 +24,10 @@ type t =
 
 let lookup_username () = Option.value (Sys.getenv "USER") ~default:"unknown"
 
-let create ~deployment_stage ~client_info ~worker_name =
-  { username = lookup_username ()
+let create ~deployment_stage ~client_info ~worker_name ~username =
+  { username = Option.value_or_thunk username ~default:lookup_username
   ; deployment_stage
-  ; log_paths_and_features = false
+  ; sensitivity_context = Sensitivity_context.get_workspace_context ()
   ; client_info
   ; host = Core_unix.gethostname ()
   ; ocaml_version = Sys.ocaml_version

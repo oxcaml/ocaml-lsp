@@ -20,6 +20,12 @@ val ppx_string_config_for_string : Ppx_string.Config.t
     implementation *)
 val set_once_set_if_none : 'a Set_once.t -> here:Source_code_position.t -> 'a -> unit
 
+(** Call [In_thread.run] with a function that need not be portable *)
+val in_thread_run
+  :  thread:Async.In_thread.Helper_thread.t
+  -> (unit -> 'a)
+  -> 'a Async.Deferred.t
+
 (** Create an optional flag with a default doc *)
 val flag_optional_with_default_doc
   :  string

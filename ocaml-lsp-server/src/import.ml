@@ -201,7 +201,6 @@ include struct
   module Notify = Rpc.Notify
   module Reply = Rpc.Reply
   module Server = Server
-  module Lazy_fiber = Lsp_fiber.Lazy_fiber
   module Json = Json
 end
 
@@ -349,7 +348,6 @@ include struct
   module WorkspaceEdit = WorkspaceEdit
   module WorkspaceFolder = WorkspaceFolder
   module WorkspaceFoldersChangeEvent = WorkspaceFoldersChangeEvent
-  module WorkspaceSymbolParams = WorkspaceSymbolParams
   module WorkspaceFoldersServerCapabilities = WorkspaceFoldersServerCapabilities
 end
 

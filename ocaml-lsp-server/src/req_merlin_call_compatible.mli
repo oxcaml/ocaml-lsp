@@ -23,6 +23,5 @@ val get_doc_id : params:Jsonrpc.Structured.t option -> TextDocumentIdentifier.t 
 val on_request
   :  log_info:Log_info.t
   -> params:Jsonrpc.Structured.t option
-  -> State.t Server.t
   -> State.t
   -> Json.t Fiber.t

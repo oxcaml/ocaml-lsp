@@ -21,7 +21,6 @@ let create
       Event_info.create
         ~index:event_index
         ~action
-        ~log_paths_and_features:false
         ?primary_uri
         ?other_uris
         ?text

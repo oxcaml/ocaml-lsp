@@ -2,8 +2,6 @@ open! Core
 
 [@@@alert "-private_lsp_library"]
 
-module Jsonrpc = Lsp_json_rpc_types.Jsonrpc
-
 let%expect_test "t_of_yojson works with optional request_time field present in requests" =
   let json_with_request_time =
     `Assoc

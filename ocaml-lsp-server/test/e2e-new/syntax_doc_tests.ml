@@ -90,7 +90,7 @@ let foo (type a : float64) (x : a) = 42
     {
       "contents": {
         "kind": "markdown",
-        "value": "```ocaml\nfloat64 mod external_\n```\n***\n`syntax` Kind abbreviation: The layout of types represented by a 64-bit machine float. See [Manual](https://beta.oxcaml.org/documentation/unboxed-types/intro/)"
+        "value": "```ocaml\nfloat64\n```\n***\n`syntax` Kind abbreviation: The layout of types represented by a 64-bit machine float. See [Manual](https://beta.oxcaml.org/documentation/unboxed-types/intro/)"
       },
       "range": {
         "start": { "line": 1, "character": 18 },

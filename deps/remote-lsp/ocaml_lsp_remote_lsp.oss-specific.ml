@@ -7,6 +7,7 @@ module Metadata_for_query = struct
     ; workspace : File_path.Absolute.t
     ; file_contents : string
     ; file_path : File_path.t
+    ; client_info : Lsp.Types.Client_info.t option
     }
 end
 
@@ -24,9 +25,5 @@ let hover_query ~log_info:_ ~stage:_ ~disable_remote_lsp ~metadata:_ _ =
 ;;
 
 let references_query ~log_info:_ ~stage:_ ~disable_remote_lsp ~metadata:_ _ _ =
-  no_remote_lsp ~disable_remote_lsp
-;;
-
-let call_compatible_query ~log_info:_ ~stage:_ ~disable_remote_lsp ~metadata:_ ~params:_ =
   no_remote_lsp ~disable_remote_lsp
 ;;

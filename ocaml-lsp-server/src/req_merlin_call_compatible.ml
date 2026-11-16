@@ -87,8 +87,9 @@ module Request_params = struct
   ;;
 end
 
-(* This type and its yojson conversions are defined in [Lsp.Client_request] so that the
-   remote-lsp can import them. If you need to change them, do it there, not here! *)
+(* This type and its yojson conversions are defined in [Lsp.Client_request] so that other
+   clients of [merlinCallCompatible] can decode its answers. If you need to change them,
+   do it there, not here! *)
 type t = Lsp.Client_request.Call_compatible_result.t
 
 let t_of_yojson = Lsp.Client_request.Call_compatible_result.t_of_yojson
@@ -166,86 +167,7 @@ let handle_using_merlin
     raise_invalid_params ~data ~message:"Unexpected command name" ()
 ;;
 
-(* There are many JSON variants, namely [Json.t], which is the most general, and
-   [Merlin_utils.Std.Json.t], which is a subset of [Json.t]. The return type of custom
-   requests has to be the most general, but we know that what we get back from remote-lsp
-   is actually the subset [Merlin_utils.Std.Json.t]. To reuse merlin's sexp machinery, we
-   convert from the former to the latter. *)
-let rec to_merlin_json (json : Json.t) : Merlin_utils.Std.Json.t =
-  match json with
-  | (`Null | `Bool _ | `Int _ | `Float _ | `String _) as json -> json
-  | `Assoc l -> `Assoc (List.map l ~f:(fun (key, json) -> key, to_merlin_json json))
-  | `List l -> `List (List.map l ~f:to_merlin_json)
-  | `Intlit _ ->
-    failwith [%string "key `Intlit not allowed in merlin json: %{Json.to_string json}"]
-  | `Tuple _ ->
-    failwith [%string "key `Tuple not allowed in merlin json: %{Json.to_string json}"]
-  | `Variant _ ->
-    failwith [%string "key `Variant not allowed in merlin json: %{Json.to_string json}"]
-;;
-
-(* Because the [UnknownRequest] type is very generic and the remote LSP has different
-   workspace paths than the local LSP, the [call_compatible_query] ends up having to reach
-   into the json to modify paths. In particular, it looks for:
-
-   1) a ["uri"] field in the top-level [`Assoc] of [params_json], which it translates to a
-      uri that should be valid in its own workspace,
-   2) an ouput json that's compatible with [Result.t_of_yojson] so that it can unwrap it
-      and pull out the [result] field, and
-   3) any ["file"] fields in the output json, which it translates back from its workspace
-      into local paths.
-
-   See [app/code-search/remote-lsp/lib/lsp_client.ml] for more details. *)
-let handle_with_remote_lsp ~log_info ~result_as_sexp ~params_json server state uri =
-  let open Fiber.O in
-  let failure =
-    `Assoc [ "class", `String "failure"; "value", `String "remote-lsp fallback failed" ]
-  in
-  let* json =
-    match Remote_lsp.call_compatible_query ~log_info state uri ~params:params_json with
-    | Some json -> json >>| Option.value ~default:failure
-    | None -> Fiber.return failure
-  in
-  let json = to_merlin_json json in
-  (* This message appears on the bottom line in vim and emacs, and as a popup in the
-     bottom right in vscode. *)
-  let+ () =
-    task_if_running state.detached ~f:(fun () ->
-      Server.notification
-        server
-        (ShowMessage
-           (ShowMessageParams.create
-              ~message:"remote-lsp: Merlin results may be out of date"
-              ~type_:Info)))
-  in
-  serialize_results ~result_as_sexp json
-;;
-
-let on_request ~(log_info : Log_info.t) ~params:params_json server state =
-  let open Fiber.O in
-  let params = (Option.value ~default:(`Assoc []) params_json :> Json.t) in
-  let params = Request_params.t_of_yojson params in
-  let uri = params.text_document.uri in
-  let* merlin_can_answer_queries =
-    Merlin_status.merlin_can_answer_queries ~log_info state uri
-  in
-  (* For now, we only fall back to merlin on [locate] (go to definition/declaration) and
-     [locate-type] (go to type declaration) queries, which are sent by emacs via
-     ocaml-eglot. *)
-  let use_remote_lsp_fallback =
-    State.should_fall_back state
-    && List.mem [ "locate"; "locate-type" ] params.command ~equal:String.equal
-  in
-  (* If we are in a test, merlin will not be configured, but will still be able answer
-     queries as it won't have to cross file boundaries. Querying remote-lsp is thus a)
-     unnecessary and b) likely to fail as the test LSP was probably not first passed a
-     file with a valid feature-id (e.g. "foo.ml"). *)
-  match merlin_can_answer_queries || Core.am_running_test with
-  | true -> handle_using_merlin ~log_info state params
-  | false ->
-    (match use_remote_lsp_fallback with
-     | false -> handle_using_merlin ~log_info state params
-     | true ->
-       let result_as_sexp = params.result_as_sexp in
-       handle_with_remote_lsp ~log_info ~result_as_sexp ~params_json server state uri)
+let on_request ~(log_info : Log_info.t) ~params state =
+  let params = (Option.value ~default:(`Assoc []) params :> Json.t) in
+  handle_using_merlin ~log_info state (Request_params.t_of_yojson params)
 ;;

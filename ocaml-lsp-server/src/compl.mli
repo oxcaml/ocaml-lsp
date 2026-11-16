@@ -13,12 +13,25 @@ module Resolve : sig
 end
 
 module Complete_by_prefix : sig
+  module Function_label : sig
+    type t =
+      { name : string
+      ; type_ : string
+      }
+  end
+
+  type t =
+    { entries : CompletionItem.t list
+    ; application_labels : Function_label.t list option
+    (** [None] unless the position is in a function application. *)
+    }
+
   (** Use Merlin to obtain completions and perform some processing to make the result more
       suitable for returning by LSP. As an exception to this, in the case that Merlin
       reports that the [Position.t] is a function application context, do not squash
       function argument names into the completions list, as is normally necessary for
-      [textDocument/completion] requests. Instead, return those function argument names as
-      the [(string * string) list option]. *)
+      [textDocument/completion] requests. Instead, return those function argument names
+      and their types in [application_labels]. *)
   val complete_nosquash
     :  log_info:Log_info.t
     -> State.t
@@ -28,7 +41,7 @@ module Complete_by_prefix : sig
     -> Position.t
     -> deprecated:bool
     -> resolve:bool
-    -> (CompletionItem.t list * (string * string) list option) Fiber.t
+    -> t Fiber.t
 end
 
 (** Creates a server response for ["textDocument/completion"]. *)
@@ -72,6 +85,10 @@ val prefix_of_position
 
 (** Similar to [prefix_of_position] but computes a suffix. *)
 val suffix_of_position : Msource.t -> [< Msource.position ] -> string
+
+(** Whether [filterDoubleUnderscore] hides [name]: it contains [__], like ppx_template's
+    [List.map__local], and the [typed] identifier component doesn't. *)
+val should_hide_double_underscore_name : typed:string -> string -> bool
 
 (** [reconstruct_ident source position] returns the identifier at [position]. Note:
     [position] can be in the middle of the identifier.

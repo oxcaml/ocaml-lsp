@@ -10,10 +10,14 @@ val open_document
   -> unit Fiber.t
 
 (** Performs the request you return from the makeRequest function and then gives it the
-    the handler function you provide *)
+    the handler function you provide.
+
+    The document is opened under [uri] if given, and otherwise under the default URI for
+    [path]. *)
 val iter_lsp_response
   :  ?prep:(unit Client.t -> unit Fiber.t)
   -> ?path:string
+  -> ?uri:DocumentUri.t
   -> makeRequest:(TextDocumentIdentifier.t -> 'a Client.out_request)
   -> source:string
   -> ('a -> unit)

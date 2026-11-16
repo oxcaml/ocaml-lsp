@@ -17,7 +17,7 @@ type t =
 let create
   ~index
   ~action
-  ?log_paths_and_features:_
+  ?sensitivity_context:_
   ?primary_uri:_
   ?other_uris:_
   ?text

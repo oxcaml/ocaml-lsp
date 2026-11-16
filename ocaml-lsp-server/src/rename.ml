@@ -72,9 +72,28 @@ let make_doc state uri text =
     { textDocument = { languageId = "ocaml"; text; uri; version = 0 } }
 ;;
 
+(** Given a Merlin-returned filename, make a corresponding URI
+
+    One peculiarity is what to do when edits need to be made in the file, which is the
+    original source of the rename, and for which the editor has provided a query string
+    (for instance VSCode may use [file:///foo.ml?<annotation>] in diff views coming from
+    some extensions). Naively reconstructing [file:///foo.ml] from [foo.ml] and creating a
+    [TextEdit] with it means that VSCode would apply the change to a "normal buffer" of
+    [foo.ml] rather than the one from which the user has triggered a rename. The observed
+    behavior is: the user triggers a rename from such a diff buffer, nothing happens
+    there, and the change is silently applied in an unsaved "normal buffer" for the same
+    file. To prevent this, we special-case the requesting uri by always preserving
+    whatever query string it might have. *)
+let uri_of_occurrence_fname ~requesting_uri fname =
+  let fname_uri = Uri.of_path fname in
+  match Uri.equal fname_uri (Uri.drop_query requesting_uri) with
+  | true -> requesting_uri
+  | false -> fname_uri
+;;
+
 (* Checks if we're renaming a labeled or optional argument and avoids changing the
    function signature. *)
-let create_edit (state : State.t) new_name loc =
+let create_edit (state : State.t) ~requesting_uri new_name loc =
   let range = Range.of_loc loc in
   let make_default_edit () = TextEdit.create ~range ~newText:new_name in
   (* [of_lexical_position] only returns [None] for the "dummy" position line 0, column -1. *)
@@ -84,7 +103,7 @@ let create_edit (state : State.t) new_name loc =
      [let y = ... in f ~x:y]. To detect when this transformation is necessary, we check if
      the token before the identifier being renamed is [~] or [?]. If the document hasn't
      yet been opened, we first need to load it from disk. *)
-  let uri = Uri.of_path loc.loc_start.pos_fname in
+  let uri = uri_of_occurrence_fname ~requesting_uri loc.loc_start.pos_fname in
   let+ doc =
     match Document_store.get_opt state.store uri with
     | Some doc -> Fiber.return doc
@@ -127,7 +146,7 @@ let rename
         occurrences
         ~init:(Map.empty (module Core.String))
         ~f:(fun edits ({ loc; is_stale = _ } : Query_protocol.occurrence) ->
-          let+ edit = create_edit state newName loc in
+          let+ edit = create_edit state ~requesting_uri:uri newName loc in
           Map.update edits loc.loc_start.pos_fname ~f:(function
             | None -> [ edit ]
             | Some edits -> edit :: edits))
@@ -146,8 +165,8 @@ let rename
       then (
         let documentChanges =
           Map.to_alist edits
-          |> List.map ~f:(fun (uri, edits) ->
-            let uri = Uri.of_path uri in
+          |> List.map ~f:(fun (fname, edits) ->
+            let uri = uri_of_occurrence_fname ~requesting_uri:uri fname in
             let edits = List.map edits ~f:(fun e -> `TextEdit e) in
             let textDocument =
               OptionalVersionedTextDocumentIdentifier.create ~uri ~version ()
@@ -157,7 +176,9 @@ let rename
         WorkspaceEdit.create ~documentChanges ())
       else (
         let changes =
-          Map.to_alist edits |> List.map ~f:(fun (uri, edits) -> Uri.of_path uri, edits)
+          Map.to_alist edits
+          |> List.map ~f:(fun (fname, edits) ->
+            uri_of_occurrence_fname ~requesting_uri:uri fname, edits)
         in
         WorkspaceEdit.create ~changes ())
     in

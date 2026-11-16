@@ -11,6 +11,22 @@ val iter_code_actions
   -> (CodeActionResult.t -> unit)
   -> unit Deferred.t
 
+(** Print the code actions returned for [range] in [source], keeping only those satisfying
+    [filter]. *)
+val print_code_actions
+  :  ?prep:(unit Test.Import.Client.t -> unit Fiber.t)
+  -> ?path:string
+  -> ?filter:([ `Command of Command.t | `CodeAction of CodeAction.t ] -> bool)
+  -> string
+  -> Range.t
+  -> unit Deferred.t
+
+(** Whether [action] is a code action whose kind starts with [action_name]. *)
+val find_action
+  :  string
+  -> [ `Command of Command.t | `CodeAction of CodeAction.t ]
+  -> bool
+
 val parse_selection : string -> string * Range.t
 
 val apply_code_action

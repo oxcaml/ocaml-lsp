@@ -32,6 +32,13 @@ val log_merlin_timing
   -> Log_info.t
   -> unit
 
+(** Logs the compiler artifacts merlin read from disk. *)
+val log_cmi_reads
+  :  cache_information:Merlin_utils.Std.json
+  -> document_uri:Lsp.Uri.t
+  -> Log_info.t
+  -> unit
+
 (** Logs a generic event. *)
 val log_event
   :  ?message:string

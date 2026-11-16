@@ -196,6 +196,12 @@ end = struct
           ~cache_information
           log_info
       in
+      let () =
+        Ocaml_lsp_logging.log_cmi_reads
+          ~cache_information
+          ~document_uri:(Text_document.documentUri doc)
+          log_info
+      in
       let dur = Core.Time_ns.diff exec_stop_time exec_start_time in
       let+ () =
         Metrics.report

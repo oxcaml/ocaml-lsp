@@ -2,6 +2,7 @@ module Event_info = Event_info
 module Log_info = Log_info
 module Observations = Observations
 module Session_info = Session_info
+module Sensitivity_context = Sensitivity_context
 module Structured_logging = Structured_logging
 
 type t = Session.t
@@ -10,6 +11,7 @@ val init
   :  deployment_stage:Stage.t
   -> client_info:Lsp.Types.Client_info.t option
   -> worker_name:string option
+  -> username:string option
   -> t Async.Deferred.t
 
 val close : t -> unit Core.Or_error.t Async.Deferred.t

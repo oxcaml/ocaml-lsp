@@ -35,24 +35,26 @@ module Request_params = struct
   ;;
 end
 
-let serialize (completions, labels) =
-  `Assoc
-    [ "entries", Json.Conv.yojson_of_list CompletionItem.yojson_of_t completions
-    ; ( "context"
-        (* The complex, seemingly redundant structure here is intended to mirror the
-           output of 'merlin complete-prefix'. One day there may be forms of context other
-           than just function application. *)
-      , Option.value_map labels ~default:`Null ~f:(fun labels ->
-          `List
+let serialize_label { Compl.Complete_by_prefix.Function_label.name; type_ } =
+  `Assoc [ "name", `String name; "type", `String type_ ]
+;;
+
+let serialize { Compl.Complete_by_prefix.entries; application_labels } =
+  let entries = "entries", `List (List.map entries ~f:CompletionItem.yojson_of_t) in
+  match application_labels with
+  | None -> `Assoc [ entries ]
+  | Some labels ->
+    `Assoc
+      [ entries
+      ; ( "context"
+          (* The complex, seemingly redundant structure here is intended to mirror the
+             output of 'merlin complete-prefix'. One day there may be forms of context
+             other than just function application. *)
+        , `List
             [ `String "application"
-            ; `Assoc
-                [ ( "labels"
-                  , Json.Conv.yojson_of_list
-                      (fun (n, t) -> `Assoc [ "name", `String n; "type", `String t ])
-                      labels )
-                ]
-            ]) )
-    ]
+            ; `Assoc [ "labels", `List (List.map labels ~f:serialize_label) ]
+            ] )
+      ]
 ;;
 
 let on_request ~log_info ~(params : Jsonrpc.Structured.t option) (state : State.t) =
@@ -62,7 +64,7 @@ let on_request ~log_info ~(params : Jsonrpc.Structured.t option) (state : State.
     in
     let doc = Document_store.get state.store uri in
     match Document.kind doc with
-    | `Other -> Fiber.return (`Assoc [ "entries", `Null; "context", `Null ])
+    | `Other -> Fiber.return (`Assoc [ "entries", `Null ])
     | `Merlin merlin ->
       Compl.Complete_by_prefix.complete_nosquash
         ~log_info

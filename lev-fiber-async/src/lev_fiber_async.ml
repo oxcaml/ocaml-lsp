@@ -194,7 +194,8 @@ module Lev_fiber = struct
                          | true -> return (`Repeat ())
                          | false ->
                            let%map result =
-                             Monitor.try_with (fun () -> In_thread.run ~thread f)
+                             Monitor.try_with (fun () ->
+                               Ocaml_lsp_misc_shims.in_thread_run ~thread f)
                              >>| function
                              | Ok _ as ok -> ok
                              | Error (Monitor.Monitor_exn exn) ->

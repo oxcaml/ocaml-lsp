@@ -62,7 +62,7 @@ oss-deps:
 	opam --cli=2.5 pin add merlin-lib "$(MERLIN_PIN)" --subpath="$(MERLIN_SUBPATH)" --no-action --yes; \
 	python3 -c 'from pathlib import Path; p = Path("_opam/.opam-switch/overlay/merlin-lib/opam"); p.write_text(p.read_text().replace("  [\"dune\" \"subst\"] {dev}\n", ""))'; \
 	opam --cli=2.5 install merlin-lib --skip-updates --yes; \
-	opam --cli=2.5 install ./ocaml-lsp.opam --deps-only --with-test --skip-updates --yes
+	opam --cli=2.5 install ./jsonrpc.opam ./lsp.opam ./ocaml-lsp-server.opam --deps-only --with-test --skip-updates --yes
 
 buildoss: $(OSS_DEPS_PREREQUISITE)
 	$(OPAM_ENV) dune build --root .

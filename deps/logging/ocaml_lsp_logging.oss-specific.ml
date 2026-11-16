@@ -1,4 +1,5 @@
 module Fiber = Ocaml_lsp_fiber
+module Sensitivity_context = Ocaml_lsp_logging_impl.Sensitivity_context
 module Event_info = Ocaml_lsp_logging_impl.Event_info
 module Log_info = Ocaml_lsp_logging_impl.Log_info
 module Observations = Ocaml_lsp_logging_impl.Observations
@@ -12,6 +13,7 @@ let close = Ocaml_lsp_logging_impl.close
 let with_logging = Ocaml_lsp_logging_impl.with_logging
 let with_fiber_logging = Ocaml_lsp_logging_impl.with_fiber_logging
 let log_merlin_timing = Ocaml_lsp_logging_impl.log_merlin_timing
+let log_cmi_reads = Ocaml_lsp_logging_impl.log_cmi_reads
 let log_event = Ocaml_lsp_logging_impl.log_event
 let log_queue_stats = Ocaml_lsp_logging_impl.log_queue_stats
 let log_reference_counts = Ocaml_lsp_logging_impl.log_reference_counts

@@ -24,7 +24,7 @@ type t =
 val create
   :  index:int
   -> action:string
-  -> ?log_paths_and_features:bool (* ignored *)
+  -> ?sensitivity_context:Sensitivity_context.t (* ignored *)
   -> ?primary_uri:Lsp.Uri.t (* ignored *)
   -> ?other_uris:Lsp.Uri.t list (* ignored *)
   -> ?text:string

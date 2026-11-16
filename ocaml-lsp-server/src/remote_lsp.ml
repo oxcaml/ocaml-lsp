@@ -8,7 +8,12 @@ let metadata_for_query (state : State.t) uri =
   let%map.Option workspace, file_path = Ocaml_lsp_uri.workspace_and_relative_path uri in
   let file_contents = Document.text (Document_store.get state.store uri) in
   let file_path = File_path.of_relative file_path in
-  { Metadata_for_query.feature_id; workspace; file_contents; file_path }
+  { Metadata_for_query.feature_id
+  ; workspace
+  ; file_contents
+  ; file_path
+  ; client_info = State.client_info state
+  }
 ;;
 
 (* Some remote-lsp errors (like UnknownRepo) indicate that we should no longer issue
@@ -46,16 +51,4 @@ let references_query ~log_info (state : State.t) uri position context =
     ~metadata
     position
     context
-;;
-
-let call_compatible_query ~log_info (state : State.t) uri ~params =
-  let%map.Option metadata = metadata_for_query state uri in
-  let disable_remote_lsp = disable_remote_lsp state in
-  let stage = state.configuration.stage in
-  Ocaml_lsp_remote_lsp.call_compatible_query
-    ~log_info
-    ~stage
-    ~disable_remote_lsp
-    ~metadata
-    ~params
 ;;

@@ -53,7 +53,7 @@ let handle_using_local_merlin
     in
     let+ () =
       match synced with
-      | `Out_of_sync _ ->
+      | Out_of_sync _ ->
         send_notification
           rpc
           "The index might be out-of-sync. Make sure you are building the index file."

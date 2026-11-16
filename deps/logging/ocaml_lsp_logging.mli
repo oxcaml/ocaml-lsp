@@ -1,4 +1,5 @@
 module Fiber = Ocaml_lsp_fiber
+module Sensitivity_context = Ocaml_lsp_logging_impl.Sensitivity_context
 
 module Event_info : sig
   (** Per-event fields that are logged *)
@@ -26,10 +27,9 @@ module Event_info : sig
   val create
     :  index:int
     -> action:string
-    -> ?log_paths_and_features:bool
-         (** When [false] (the default), feature/file/other_files are suppressed
-             regardless of what [primary_uri]/[other_uris] say, to avoid emitting paths
-             outside of a Jane Street repository. *)
+    -> ?sensitivity_context:Sensitivity_context.t
+         (** Decides whether feature/file/other_files may be logged. When [None], nothing
+             is logged. *)
     -> ?primary_uri:Lsp.Uri.t
     -> ?other_uris:Lsp.Uri.t list
     -> ?text:string
@@ -123,7 +123,7 @@ module Session_info : sig
   type t = Ocaml_lsp_logging_impl.Session_info.t =
     { username : string
     ; deployment_stage : Stage.t
-    ; log_paths_and_features : bool
+    ; sensitivity_context : Sensitivity_context.t
     ; client_info : Lsp.Types.Client_info.t option
     ; host : string
     ; ocaml_version : string
@@ -136,10 +136,14 @@ module Session_info : sig
 
   val sexp_of_t : t -> Core.Sexp.t
 
+  (** Create a new [Session_info.t]
+
+      [username], if provided, is logged instead of the user running this process *)
   val create
     :  deployment_stage:Stage.t
     -> client_info:Lsp.Types.Client_info.t option
     -> worker_name:string option
+    -> username:string option
     -> t
 
   val get_editor_name : t -> string
@@ -211,6 +215,7 @@ val init
   :  deployment_stage:Stage.t
   -> client_info:Lsp.Types.Client_info.t option
   -> worker_name:string option
+  -> username:string option
   -> t Async.Deferred.t
 
 val close : t -> unit Core.Or_error.t Async.Deferred.t
@@ -242,6 +247,16 @@ val log_merlin_timing
   -> exec_stop_time:Core.Time_ns.t
   -> timing_breakdown:(string * float) list
   -> cache_information:Merlin_utils.Std.json
+  -> Log_info.t
+  -> unit
+
+(** Logs one row per compiler artifact (.cmi, .cmt, .cmti, .cms or .cmsi file) listed in
+    the ["file_reads"] field of [cache_information], along with each file's size and
+    digest and the working-copy parent of the workspace of [document_uri]. These are
+    computed in the background. *)
+val log_cmi_reads
+  :  cache_information:Merlin_utils.Std.json
+  -> document_uri:Lsp.Uri.t
   -> Log_info.t
   -> unit
 

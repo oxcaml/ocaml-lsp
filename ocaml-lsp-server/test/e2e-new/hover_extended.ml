@@ -689,7 +689,7 @@ type foo : immediate
 
     type foo : immediate
     ***
-    Kind: value non_pointer mod global many stateless immutable external_
+    Kind: value non_pointer mod global many stateless immutable
     |}];
   let%map.Deferred () = hover_verbosity_test ~source ~position ~verbosity:3 in
   [%expect
@@ -711,50 +711,5 @@ type foo : immediate
           contended
           external_
           static
-    |}]
-;;
-
-let%expect_test "mode verbosity" =
-  let source =
-    {ocaml|
-let counter = ref 0
-let (f @ portable) () =
-  let _ = counter in
-  ()
-|ocaml}
-  in
-  let position = Position.create ~line:3 ~character:13 in
-  let%bind.Deferred () = hover_verbosity_test ~source ~position ~verbosity:0 in
-  [%expect
-    {|
-    canIncreaseVerbosity: true
-
-    int ref
-    |}];
-  let%bind.Deferred () = hover_verbosity_test ~source ~position ~verbosity:1 in
-  [%expect
-    {|
-    canIncreaseVerbosity: true
-
-    int ref
-
-    type ('a : value_or_null) ref = { mutable contents : 'a; }
-    ***
-    Kind: mutable_data
-    ***
-    Mode: @ portable contended stateless
-    |}];
-  let%map.Deferred () = hover_verbosity_test ~source ~position ~verbosity:2 in
-  [%expect
-    {|
-    canIncreaseVerbosity: true
-
-    int ref
-
-    type ('a : value_or_null) ref = { mutable contents : 'a; }
-    ***
-    Kind: value non_float mod forkable unyielding many stateless
-    ***
-    Mode: @ global portable contended read_write stateless aliased many forkable unyielding dynamic
     |}]
 ;;

@@ -22,8 +22,6 @@ type t =
   ; detached : Fiber.Pool.t
   ; configuration : Configuration.t
   ; trace : TraceValue.t
-  ; ocamlformat_rpc : Ocamlformat_rpc.t
-  ; symbols_thread : Lev_fiber.Thread.t Lazy_fiber.t
   ; wheel : Lev_fiber.Timer.Wheel.t
   ; hover_extended : hover_extended
   ; feature_id : Feature_id.t option (* Required in remote-lsp RPCs. *)
@@ -35,18 +33,12 @@ type t =
       logs and threaded into [Ocaml_lsp_logging.init] so that every log management system
       entry and every structured logging row can be attributed to the worker that emitted
       it. *)
+  ; username : string option
+  (** User on whose behalf this ocaml-lsp runs, as passed via [-username]. Overrides the
+      username in logs. *)
   }
 
-let create
-  ~store
-  ~merlin
-  ~detached
-  ~configuration
-  ~ocamlformat_rpc
-  ~symbols_thread
-  ~wheel
-  ~worker_name
-  =
+let create ~store ~merlin ~detached ~configuration ~wheel ~worker_name ~username =
   { init = Uninitialized
   ; merlin_config = Merlin_config.DB.create ()
   ; store
@@ -54,8 +46,6 @@ let create
   ; detached
   ; configuration
   ; trace = Off
-  ; ocamlformat_rpc
-  ; symbols_thread
   ; wheel
   ; hover_extended = { history = None }
   ; feature_id = None
@@ -63,6 +53,7 @@ let create
   ; event_index = 0
   ; logging_session = None
   ; worker_name
+  ; username
   }
 ;;
 

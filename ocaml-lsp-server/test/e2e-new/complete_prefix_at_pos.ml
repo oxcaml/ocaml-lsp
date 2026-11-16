@@ -23,25 +23,28 @@ let print_complete_prefix_at_pos
 ;;
 
 let%expect_test "Serialization works as expected" =
+  let module C = Ocaml_lsp_server.Testing.Compl.Complete_by_prefix in
   let serialize =
     Ocaml_lsp_server.Custom_request.Complete_prefix_at_pos.For_testing.serialize
   in
-  let print j = Yojson.Safe.pretty_to_string j |> print_endline in
-  let completions =
-    [ CompletionItem.t_of_yojson
-        (`Assoc [ "detail", `String "'a option -> bool"; "label", `String "is_none" ])
+  let print application_labels =
+    let entries =
+      [ CompletionItem.t_of_yojson
+          (`Assoc [ "detail", `String "'a option -> bool"; "label", `String "is_none" ])
+      ]
+    in
+    serialize { C.entries; application_labels }
+    |> Yojson.Safe.pretty_to_string
+    |> print_endline
+  in
+  let labels =
+    [ { C.Function_label.name = "~key"; type_ = "'_weak1" }
+    ; { name = "~data"; type_ = "'_weak1" }
     ]
   in
-  let labels = [ "~key", "'_weak1"; "~data", "'_weak1" ] in
-  print (serialize (completions, None));
-  [%expect
-    {|
-    {
-      "entries": [ { "detail": "'a option -> bool", "label": "is_none" } ],
-      "context": null
-    }
-    |}];
-  print (serialize (completions, Some []));
+  print None;
+  [%expect {| { "entries": [ { "detail": "'a option -> bool", "label": "is_none" } ] } |}];
+  print (Some []);
   [%expect
     {|
     {
@@ -49,7 +52,7 @@ let%expect_test "Serialization works as expected" =
       "context": [ "application", { "labels": [] } ]
     }
     |}];
-  print (serialize (completions, Some labels));
+  print (Some labels);
   [%expect
     {|
     {
@@ -78,7 +81,7 @@ let go =
 ;;
 |ocaml}
   in
-  let position = Position.create ~line:4 ~character:18 in
+  let position = Position.create ~line:3 ~character:18 in
   let%map () = print_complete_prefix_at_pos source position "Option.is_" in
   [%expect
     {|
@@ -92,8 +95,8 @@ let go =
           "textEdit": {
             "newText": "is_none",
             "range": {
-              "start": { "line": 4, "character": 18 },
-              "end": { "line": 4, "character": 18 }
+              "start": { "line": 3, "character": 15 },
+              "end": { "line": 3, "character": 18 }
             }
           }
         },
@@ -105,13 +108,12 @@ let go =
           "textEdit": {
             "newText": "is_some",
             "range": {
-              "start": { "line": 4, "character": 18 },
-              "end": { "line": 4, "character": 18 }
+              "start": { "line": 3, "character": 15 },
+              "end": { "line": 3, "character": 18 }
             }
           }
         }
-      ],
-      "context": null
+      ]
     }
     |}]
 ;;
@@ -126,7 +128,7 @@ let go =
 ;;
 |ocaml}
   in
-  let position = Position.create ~line:4 ~character:8 in
+  let position = Position.create ~line:3 ~character:8 in
   let%map () = print_complete_prefix_at_pos source position "Option.is_" in
   [%expect
     {|
@@ -140,8 +142,8 @@ let go =
           "textEdit": {
             "newText": "is_none",
             "range": {
-              "start": { "line": 4, "character": 8 },
-              "end": { "line": 4, "character": 8 }
+              "start": { "line": 3, "character": 8 },
+              "end": { "line": 3, "character": 8 }
             }
           }
         },
@@ -153,13 +155,12 @@ let go =
           "textEdit": {
             "newText": "is_some",
             "range": {
-              "start": { "line": 4, "character": 8 },
-              "end": { "line": 4, "character": 8 }
+              "start": { "line": 3, "character": 8 },
+              "end": { "line": 3, "character": 8 }
             }
           }
         }
-      ],
-      "context": null
+      ]
     }
     |}]
 ;;
@@ -174,7 +175,7 @@ let go =
 ;;
 |ocaml}
   in
-  let position = Position.create ~line:4 ~character:8 in
+  let position = Position.create ~line:3 ~character:24 in
   let%map () = print_complete_prefix_at_pos source position "Option.is_" in
   [%expect
     {|
@@ -188,8 +189,8 @@ let go =
           "textEdit": {
             "newText": "is_none",
             "range": {
-              "start": { "line": 4, "character": 8 },
-              "end": { "line": 4, "character": 8 }
+              "start": { "line": 3, "character": 17 },
+              "end": { "line": 3, "character": 24 }
             }
           }
         },
@@ -201,13 +202,12 @@ let go =
           "textEdit": {
             "newText": "is_some",
             "range": {
-              "start": { "line": 4, "character": 8 },
-              "end": { "line": 4, "character": 8 }
+              "start": { "line": 3, "character": 17 },
+              "end": { "line": 3, "character": 24 }
             }
           }
         }
-      ],
-      "context": null
+      ]
     }
     |}]
 ;;
@@ -215,20 +215,26 @@ let go =
 let%expect_test "Completion can return function application context" =
   let source =
     {ocaml|
-open Core
-let (map : int String.Map.t) = String.Map.singleton "foo" 1
-String.Map.add map ~key
+open MoreLabels
+let (tbl : (string, int) Hashtbl.t) = Hashtbl.create 1
+let () = Hashtbl.add tbl ~key
 ;;
 |ocaml}
   in
-  let position = Position.create ~line:3 ~character:23 in
+  let position = Position.create ~line:3 ~character:29 in
   let%map () = print_complete_prefix_at_pos source position "~key" in
   [%expect
     {|
     {
       "entries": [],
       "context": [
-        "application", { "labels": [ { "name": "~key", "type": "'a" } ] }
+        "application",
+        {
+          "labels": [
+            { "name": "~key", "type": "string" },
+            { "name": "~data", "type": "int" }
+          ]
+        }
       ]
     }
     |}]
